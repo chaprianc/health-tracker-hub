@@ -5,6 +5,7 @@ import { WaterTracker } from "@/components/WaterTracker";
 import { CalorieBar } from "@/components/CalorieBar";
 import { MealChecklist, ChecklistItemData } from "@/components/MealChecklist";
 import { SettingsPanel } from "@/components/SettingsPanel";
+import { DailySummary } from "@/components/DailySummary";
 import { Apple } from "lucide-react";
 
 const MEALS: { title: string; items: ChecklistItemData[] }[] = [
@@ -71,6 +72,18 @@ const Index = () => {
           targetCalories={state.targetCalories}
           streak={state.streak}
           totalScore={state.totalScore}
+        />
+
+        {/* Daily AI Summary */}
+        <DailySummary
+          currentWeight={state.currentWeight}
+          startWeight={state.startWeight}
+          targetWeight={state.targetWeight}
+          caloriesConsumed={state.caloriesConsumed}
+          targetCalories={state.targetCalories}
+          waterCups={state.waterCups}
+          totalScore={state.totalScore}
+          weightLost={computed.weightLost}
         />
 
         {/* Calorie bar */}
