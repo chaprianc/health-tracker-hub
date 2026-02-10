@@ -1,4 +1,4 @@
-import { CheckCircle2, Circle } from "lucide-react";
+import { CheckCircle2, Circle, Pencil } from "lucide-react";
 
 export interface ChecklistItemData {
   id: string;
@@ -12,12 +12,23 @@ interface MealChecklistProps {
   items: ChecklistItemData[];
   checkedItems: Set<string>;
   onToggle: (id: string, calories: number) => void;
+  onEdit?: () => void;
 }
 
-export function MealChecklist({ title, items, checkedItems, onToggle }: MealChecklistProps) {
+export function MealChecklist({ title, items, checkedItems, onToggle, onEdit }: MealChecklistProps) {
   return (
     <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
-      <h3 className="mb-3 font-semibold text-card-foreground">{title}</h3>
+      <div className="mb-3 flex items-center justify-between">
+        <h3 className="font-semibold text-card-foreground">{title}</h3>
+        {onEdit && (
+          <button
+            onClick={onEdit}
+            className="rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+          >
+            <Pencil className="h-3.5 w-3.5" />
+          </button>
+        )}
+      </div>
       <div className="space-y-2">
         {items.map((item) => {
           const checked = checkedItems.has(item.id);

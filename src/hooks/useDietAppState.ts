@@ -2,6 +2,9 @@ import { useEffect, useMemo, useState } from "react";
 
 type WeightPoint = { date: string; weight: number };
 
+export type MealItem = { id: string; label: string; calories: number; emoji: string };
+export type MealGroup = { title: string; items: MealItem[] };
+
 type DietState = {
   currentWeight: number;
   targetWeight: number;
@@ -15,7 +18,45 @@ type DietState = {
   bestStreak: number;
   totalScore: number;
   weightHistory: WeightPoint[];
+  meals: MealGroup[];
 };
+
+const DEFAULT_MEALS: MealGroup[] = [
+  {
+    title: "🌅 ארוחת בוקר",
+    items: [
+      { id: "b1", label: "ביצים מקושקשות (2)", calories: 180, emoji: "🥚" },
+      { id: "b2", label: "לחם כוסמין", calories: 120, emoji: "🍞" },
+      { id: "b3", label: "ירקות חתוכים", calories: 40, emoji: "🥒" },
+      { id: "b4", label: "גבינה 5%", calories: 80, emoji: "🧀" },
+    ],
+  },
+  {
+    title: "☀️ ארוחת צהריים",
+    items: [
+      { id: "l1", label: "חזה עוף צלוי", calories: 250, emoji: "🍗" },
+      { id: "l2", label: "אורז מלא", calories: 200, emoji: "🍚" },
+      { id: "l3", label: "סלט ירקות", calories: 60, emoji: "🥗" },
+      { id: "l4", label: "טחינה (כף)", calories: 90, emoji: "🥄" },
+    ],
+  },
+  {
+    title: "🌙 ארוחת ערב",
+    items: [
+      { id: "d1", label: "דג סלמון", calories: 280, emoji: "🐟" },
+      { id: "d2", label: "ירקות מאודים", calories: 70, emoji: "🥦" },
+      { id: "d3", label: "קינואה", calories: 150, emoji: "🌾" },
+    ],
+  },
+  {
+    title: "🍎 חטיפים",
+    items: [
+      { id: "s1", label: "תפוח", calories: 80, emoji: "🍎" },
+      { id: "s2", label: "יוגורט", calories: 100, emoji: "🥛" },
+      { id: "s3", label: "שקדים (10)", calories: 70, emoji: "🥜" },
+    ],
+  },
+];
 
 const STORAGE_KEY = "dietAppState_v1";
 
@@ -31,6 +72,7 @@ function hydrateState(raw: any, fallback: DietState): DietState {
   return {
     ...merged,
     checkedItems: new Set(raw?.checkedItems ?? []),
+    meals: raw?.meals ?? fallback.meals,
   };
 }
 
@@ -56,6 +98,7 @@ export function useDietAppState() {
         { date: "07/02", weight: 94.8 },
         { date: "10/02", weight: 94.2 },
       ],
+      meals: DEFAULT_MEALS,
     }),
     []
   );
@@ -136,6 +179,15 @@ export function useDietAppState() {
     });
   }
 
+  function setTargetCalories(target: number) {
+    if (target < 500 || target > 5000) return;
+    setState((prev) => ({ ...prev, targetCalories: target }));
+  }
+
+  function updateMeals(meals: MealGroup[]) {
+    setState((prev) => ({ ...prev, meals }));
+  }
+
   function exportJson() {
     const payload = {
       version: "1.0",
@@ -164,6 +216,8 @@ export function useDietAppState() {
       setWaterCups,
       resetWater,
       updateWeight,
+      setTargetCalories,
+      updateMeals,
       exportJson,
       importJson,
       resetAll,
