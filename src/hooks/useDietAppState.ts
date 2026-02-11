@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 type WeightPoint = { date: string; weight: number };
 
 export type MealItem = { id: string; label: string; calories: number; emoji: string };
-export type MealGroup = { title: string; items: MealItem[] };
+export type MealGroup = { title: string; time?: string; items: MealItem[] };
 
 export type DailyLog = {
   date: string; // YYYY-MM-DD
@@ -34,6 +34,7 @@ type DietState = {
 const DEFAULT_MEALS: MealGroup[] = [
   {
     title: "🌅 ארוחת בוקר",
+    time: "07:00 - 09:00",
     items: [
       { id: "b1", label: "ביצים מקושקשות (2)", calories: 180, emoji: "🥚" },
       { id: "b2", label: "לחם כוסמין", calories: 120, emoji: "🍞" },
@@ -43,6 +44,7 @@ const DEFAULT_MEALS: MealGroup[] = [
   },
   {
     title: "☀️ ארוחת צהריים",
+    time: "12:00 - 14:00",
     items: [
       { id: "l1", label: "חזה עוף צלוי", calories: 250, emoji: "🍗" },
       { id: "l2", label: "אורז מלא", calories: 200, emoji: "🍚" },
@@ -52,6 +54,7 @@ const DEFAULT_MEALS: MealGroup[] = [
   },
   {
     title: "🌙 ארוחת ערב",
+    time: "18:00 - 20:00",
     items: [
       { id: "d1", label: "דג סלמון", calories: 280, emoji: "🐟" },
       { id: "d2", label: "ירקות מאודים", calories: 70, emoji: "🥦" },
@@ -60,6 +63,7 @@ const DEFAULT_MEALS: MealGroup[] = [
   },
   {
     title: "🍎 חטיפים",
+    time: "10:30 / 16:00",
     items: [
       { id: "s1", label: "תפוח", calories: 80, emoji: "🍎" },
       { id: "s2", label: "יוגורט", calories: 100, emoji: "🥛" },
