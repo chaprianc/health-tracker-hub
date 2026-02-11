@@ -5,7 +5,7 @@ type WeightPoint = { date: string; weight: number };
 export type MealItem = { id: string; label: string; calories: number; emoji: string };
 export type MealGroup = { title: string; items: MealItem[] };
 
-type DailyLog = {
+export type DailyLog = {
   date: string; // YYYY-MM-DD
   caloriesConsumed: number;
   checkedItems: string[];

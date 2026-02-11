@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { useDietAppState } from "@/hooks/useDietAppState";
 import { StatsCards } from "@/components/StatsCards";
 import { WeightChart } from "@/components/WeightChart";
@@ -9,7 +10,7 @@ import { SettingsPanel } from "@/components/SettingsPanel";
 import { DailySummary } from "@/components/DailySummary";
 import { EditMealDialog } from "@/components/EditMealDialog";
 import type { MealGroup } from "@/hooks/useDietAppState";
-import { Apple, Settings2 } from "lucide-react";
+import { Apple, Settings2, CalendarDays } from "lucide-react";
 
 const Index = () => {
   const { state, computed, actions } = useDietAppState();
@@ -44,6 +45,13 @@ const Index = () => {
             <h1 className="text-lg font-bold text-foreground">הדיאטה שלי</h1>
             <p className="text-xs text-muted-foreground">מעקב יומי • תזונה בריאה</p>
           </div>
+          <Link
+            to="/history"
+            className="mr-auto flex items-center gap-1.5 rounded-lg bg-secondary px-3 py-2 text-xs font-medium text-secondary-foreground transition-colors hover:bg-secondary/80"
+          >
+            <CalendarDays className="h-3.5 w-3.5" />
+            היסטוריה
+          </Link>
         </div>
       </header>
 
