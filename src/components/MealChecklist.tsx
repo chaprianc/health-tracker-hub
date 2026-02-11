@@ -1,4 +1,4 @@
-import { CheckCircle2, Circle, Pencil } from "lucide-react";
+import { CheckCircle2, Circle, Clock, Pencil } from "lucide-react";
 
 export interface ChecklistItemData {
   id: string;
@@ -9,17 +9,26 @@ export interface ChecklistItemData {
 
 interface MealChecklistProps {
   title: string;
+  time?: string;
   items: ChecklistItemData[];
   checkedItems: Set<string>;
   onToggle: (id: string, calories: number) => void;
   onEdit?: () => void;
 }
 
-export function MealChecklist({ title, items, checkedItems, onToggle, onEdit }: MealChecklistProps) {
+export function MealChecklist({ title, time, items, checkedItems, onToggle, onEdit }: MealChecklistProps) {
   return (
     <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
       <div className="mb-3 flex items-center justify-between">
-        <h3 className="font-semibold text-card-foreground">{title}</h3>
+        <div className="flex items-center gap-2">
+          <h3 className="font-semibold text-card-foreground">{title}</h3>
+          {time && (
+            <span className="flex items-center gap-1 rounded-full bg-secondary px-2 py-0.5 text-[11px] text-muted-foreground">
+              <Clock className="h-3 w-3" />
+              {time}
+            </span>
+          )}
+        </div>
         {onEdit && (
           <button
             onClick={onEdit}

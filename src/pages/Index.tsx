@@ -146,6 +146,7 @@ const Index = () => {
             <MealChecklist
               key={`${meal.title}-${idx}`}
               title={meal.title}
+              time={meal.time}
               items={meal.items}
               checkedItems={state.checkedItems}
               onToggle={actions.toggleChecklistItem}
