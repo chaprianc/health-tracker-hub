@@ -5,6 +5,14 @@ type WeightPoint = { date: string; weight: number };
 export type MealItem = { id: string; label: string; calories: number; emoji: string };
 export type MealGroup = { title: string; items: MealItem[] };
 
+type DailyLog = {
+  date: string; // YYYY-MM-DD
+  caloriesConsumed: number;
+  checkedItems: string[];
+  waterCups: number;
+  totalScore: number;
+};
+
 type DietState = {
   currentWeight: number;
   targetWeight: number;
@@ -19,6 +27,8 @@ type DietState = {
   totalScore: number;
   weightHistory: WeightPoint[];
   meals: MealGroup[];
+  lastResetDate: string; // YYYY-MM-DD
+  dailyHistory: DailyLog[];
 };
 
 const DEFAULT_MEALS: MealGroup[] = [
@@ -60,6 +70,10 @@ const DEFAULT_MEALS: MealGroup[] = [
 
 const STORAGE_KEY = "dietAppState_v1";
 
+function getTodayStr() {
+  return new Date().toISOString().slice(0, 10);
+}
+
 function serializeState(state: DietState) {
   return {
     ...state,
@@ -73,6 +87,35 @@ function hydrateState(raw: any, fallback: DietState): DietState {
     ...merged,
     checkedItems: new Set(raw?.checkedItems ?? []),
     meals: raw?.meals ?? fallback.meals,
+    dailyHistory: raw?.dailyHistory ?? [],
+    lastResetDate: raw?.lastResetDate ?? getTodayStr(),
+  };
+}
+
+function performDailyReset(prev: DietState): DietState {
+  const today = getTodayStr();
+  if (prev.lastResetDate === today) return prev;
+
+  // Save yesterday's data to history
+  const log: DailyLog = {
+    date: prev.lastResetDate,
+    caloriesConsumed: prev.caloriesConsumed,
+    checkedItems: Array.from(prev.checkedItems),
+    waterCups: prev.waterCups,
+    totalScore: prev.totalScore,
+  };
+
+  const dailyHistory = [...prev.dailyHistory, log].slice(-90); // keep 90 days
+
+  return {
+    ...prev,
+    caloriesConsumed: 0,
+    checkedItems: new Set<string>(),
+    waterCups: 0,
+    totalScore: 0,
+    lastResetDate: today,
+    dailyHistory,
+    // Keep: currentWeight, targetWeight, startWeight, targetCalories, weightHistory, meals, streak, successDays, bestStreak
   };
 }
 
@@ -99,21 +142,47 @@ export function useDietAppState() {
         { date: "10/02", weight: 94.2 },
       ],
       meals: DEFAULT_MEALS,
+      lastResetDate: getTodayStr(),
+      dailyHistory: [],
     }),
     []
   );
 
   const [state, setState] = useState<DietState>(initial);
 
+  // Load and check for daily reset
   useEffect(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (!saved) return;
     try {
       const raw = JSON.parse(saved);
-      setState((prev) => hydrateState(raw, prev));
+      const hydrated = hydrateState(raw, initial);
+      const afterReset = performDailyReset(hydrated);
+      setState(afterReset);
     } catch (e) {
       console.error("Failed to load state", e);
     }
+  }, []);
+
+  // Check for midnight reset periodically
+  useEffect(() => {
+    const check = () => {
+      setState((prev) => performDailyReset(prev));
+    };
+    // Calculate ms until next midnight
+    const now = new Date();
+    const midnight = new Date(now);
+    midnight.setHours(24, 0, 0, 0);
+    const msUntilMidnight = midnight.getTime() - now.getTime();
+
+    const timeout = setTimeout(() => {
+      check();
+      // Then check every minute
+      const interval = setInterval(check, 60_000);
+      return () => clearInterval(interval);
+    }, msUntilMidnight);
+
+    return () => clearTimeout(timeout);
   }, []);
 
   useEffect(() => {
