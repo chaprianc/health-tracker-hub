@@ -15,6 +15,7 @@ import { Apple, Settings2, CalendarDays, LogOut, User } from "lucide-react";
 
 const Index = () => {
   const { state, computed, actions } = useDietAppState();
+  const { profile, signOut } = useAuth();
   const [editingMeal, setEditingMeal] = useState<number | null>(null);
   const [showCalorieEdit, setShowCalorieEdit] = useState(false);
   const [calorieInput, setCalorieInput] = useState("");
