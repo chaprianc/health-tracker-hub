@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useDietAppState } from "@/hooks/useDietAppState";
+import { useAuth } from "@/contexts/AuthContext";
 import { StatsCards } from "@/components/StatsCards";
 import { WeightChart } from "@/components/WeightChart";
 import { WaterTracker } from "@/components/WaterTracker";
@@ -10,7 +11,7 @@ import { SettingsPanel } from "@/components/SettingsPanel";
 import { DailySummary } from "@/components/DailySummary";
 import { EditMealDialog } from "@/components/EditMealDialog";
 import type { MealGroup } from "@/hooks/useDietAppState";
-import { Apple, Settings2, CalendarDays } from "lucide-react";
+import { Apple, Settings2, CalendarDays, LogOut, User } from "lucide-react";
 
 const Index = () => {
   const { state, computed, actions } = useDietAppState();
