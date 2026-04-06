@@ -16,25 +16,49 @@ export type Database = {
     Tables: {
       profiles: {
         Row: {
+          activity_level: string | null
+          age: number | null
           avatar_url: string | null
           created_at: string
           display_name: string | null
+          gender: string | null
+          height: number | null
           id: string
+          is_vegetarian: boolean | null
+          onboarding_completed: boolean | null
+          target_weight: number | null
           updated_at: string
+          weight: number | null
         }
         Insert: {
+          activity_level?: string | null
+          age?: number | null
           avatar_url?: string | null
           created_at?: string
           display_name?: string | null
+          gender?: string | null
+          height?: number | null
           id: string
+          is_vegetarian?: boolean | null
+          onboarding_completed?: boolean | null
+          target_weight?: number | null
           updated_at?: string
+          weight?: number | null
         }
         Update: {
+          activity_level?: string | null
+          age?: number | null
           avatar_url?: string | null
           created_at?: string
           display_name?: string | null
+          gender?: string | null
+          height?: number | null
           id?: string
+          is_vegetarian?: boolean | null
+          onboarding_completed?: boolean | null
+          target_weight?: number | null
           updated_at?: string
+          weight?: number | null
         }
         Relationships: []
       }
