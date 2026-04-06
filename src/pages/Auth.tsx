@@ -106,6 +106,14 @@ const Auth = () => {
           >
             {loading ? "..." : isLogin ? "התחבר" : "הרשם"}
           </button>
+          {isLogin && (
+            <a
+              href="/forgot-password"
+              className="block text-center text-xs text-muted-foreground hover:text-primary hover:underline"
+            >
+              שכחת סיסמה?
+            </a>
+          )}
         </form>
 
         {/* Toggle */}

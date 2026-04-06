@@ -8,6 +8,8 @@ import Index from "./pages/Index";
 import History from "./pages/History";
 import Auth from "./pages/Auth";
 import Onboarding from "./pages/Onboarding";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -50,6 +52,8 @@ const App = () => (
         <AuthProvider>
           <Routes>
             <Route path="/auth" element={<AuthRoute><Auth /></AuthRoute>} />
+            <Route path="/forgot-password" element={<AuthRoute><ForgotPassword /></AuthRoute>} />
+            <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/onboarding" element={<OnboardingRoute><Onboarding /></OnboardingRoute>} />
             <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
             <Route path="/history" element={<ProtectedRoute><History /></ProtectedRoute>} />
