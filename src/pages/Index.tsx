@@ -10,13 +10,15 @@ import { MealChecklist } from "@/components/MealChecklist";
 import { SettingsPanel } from "@/components/SettingsPanel";
 import { DailySummary } from "@/components/DailySummary";
 import { EditMealDialog } from "@/components/EditMealDialog";
+import { ProfileEditDialog } from "@/components/ProfileEditDialog";
 import type { MealGroup } from "@/hooks/useDietAppState";
-import { Apple, Settings2, CalendarDays, LogOut, User } from "lucide-react";
+import { Apple, Settings2, CalendarDays, LogOut, User, Pencil } from "lucide-react";
 
 const Index = () => {
   const { state, computed, actions } = useDietAppState();
   const { profile, signOut } = useAuth();
   const [editingMeal, setEditingMeal] = useState<number | null>(null);
+  const [showProfileEdit, setShowProfileEdit] = useState(false);
   const [showCalorieEdit, setShowCalorieEdit] = useState(false);
   const [calorieInput, setCalorieInput] = useState("");
 
@@ -55,10 +57,18 @@ const Index = () => {
               <CalendarDays className="h-3.5 w-3.5" />
               היסטוריה
             </Link>
-            <div className="flex items-center gap-1.5 rounded-lg bg-secondary px-3 py-2 text-xs text-muted-foreground">
-              <User className="h-3.5 w-3.5" />
+            <button
+              onClick={() => setShowProfileEdit(true)}
+              className="flex items-center gap-1.5 rounded-lg bg-secondary px-3 py-2 text-xs text-muted-foreground hover:bg-secondary/80 transition-colors"
+            >
+              {profile?.avatar_url ? (
+                <img src={profile.avatar_url} alt="" className="h-5 w-5 rounded-full object-cover" />
+              ) : (
+                <User className="h-3.5 w-3.5" />
+              )}
               <span className="max-w-[100px] truncate">{profile?.display_name || "משתמש"}</span>
-            </div>
+              <Pencil className="h-3 w-3" />
+            </button>
             <button
               onClick={signOut}
               className="flex items-center gap-1 rounded-lg bg-secondary px-2.5 py-2 text-xs text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
