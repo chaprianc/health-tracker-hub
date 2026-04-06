@@ -19,7 +19,7 @@ const STEPS = ["פרטים אישיים", "מטרות", "העדפות"];
 
 const Onboarding = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, refreshProfile } = useAuth();
   const { toast } = useToast();
   const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -63,6 +63,7 @@ const Onboarding = () => {
 
       if (error) throw error;
 
+      await refreshProfile();
       toast({ title: "הפרופיל נשמר! 🎉", description: "הדיאטה שלך מותאמת אישית" });
       navigate("/", { replace: true });
     } catch (err: any) {
