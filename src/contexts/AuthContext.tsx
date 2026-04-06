@@ -6,6 +6,7 @@ type Profile = {
   id: string;
   display_name: string | null;
   avatar_url: string | null;
+  onboarding_completed: boolean | null;
 };
 
 type AuthContextType = {
@@ -41,7 +42,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (session?.user) {
           const { data } = await supabase
             .from("profiles")
-            .select("id, display_name, avatar_url")
+            .select("id, display_name, avatar_url, onboarding_completed")
             .eq("id", session.user.id)
             .single();
           setProfile(data);
@@ -58,7 +59,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (session?.user) {
         supabase
           .from("profiles")
-          .select("id, display_name, avatar_url")
+          .select("id, display_name, avatar_url, onboarding_completed")
           .eq("id", session.user.id)
           .single()
           .then(({ data }) => setProfile(data));
