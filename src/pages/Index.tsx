@@ -199,6 +199,8 @@ const Index = () => {
             onReset={actions.resetAll}
           />
         </div>
+
+        <ProfileEditDialog open={showProfileEdit} onClose={() => setShowProfileEdit(false)} />
       </main>
     </div>
   );
