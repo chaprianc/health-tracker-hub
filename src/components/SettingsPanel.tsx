@@ -1,4 +1,4 @@
-import { Download, Upload, RotateCcw } from "lucide-react";
+import { Download, Upload, RotateCcw, Calculator } from "lucide-react";
 import { useRef } from "react";
 import { toast } from "sonner";
 
@@ -6,9 +6,10 @@ interface SettingsPanelProps {
   onExport: () => string;
   onImport: (text: string) => void;
   onReset: () => void;
+  onRecalculate?: () => void;
 }
 
-export function SettingsPanel({ onExport, onImport, onReset }: SettingsPanelProps) {
+export function SettingsPanel({ onExport, onImport, onReset, onRecalculate }: SettingsPanelProps) {
   const fileRef = useRef<HTMLInputElement>(null);
 
   const handleExport = () => {
@@ -41,6 +42,15 @@ export function SettingsPanel({ onExport, onImport, onReset }: SettingsPanelProp
 
   return (
     <div className="flex flex-wrap gap-2">
+      {onRecalculate && (
+        <button
+          onClick={onRecalculate}
+          className="flex items-center gap-2 rounded-lg bg-primary/10 px-4 py-2 text-sm font-medium text-primary transition-colors hover:bg-primary/20"
+        >
+          <Calculator className="h-4 w-4" />
+          חישוב מחדש
+        </button>
+      )}
       <button
         onClick={handleExport}
         className="flex items-center gap-2 rounded-lg bg-secondary px-4 py-2 text-sm font-medium text-secondary-foreground transition-colors hover:bg-secondary/80"

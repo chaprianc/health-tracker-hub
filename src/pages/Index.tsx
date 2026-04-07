@@ -11,6 +11,7 @@ import { SettingsPanel } from "@/components/SettingsPanel";
 import { DailySummary } from "@/components/DailySummary";
 import { EditMealDialog } from "@/components/EditMealDialog";
 import { ProfileEditDialog } from "@/components/ProfileEditDialog";
+import { RecalculateDialog } from "@/components/RecalculateDialog";
 import type { MealGroup } from "@/hooks/useDietAppState";
 import { Apple, Settings2, CalendarDays, LogOut, User, Pencil } from "lucide-react";
 
@@ -19,6 +20,7 @@ const Index = () => {
   const { profile, signOut } = useAuth();
   const [editingMeal, setEditingMeal] = useState<number | null>(null);
   const [showProfileEdit, setShowProfileEdit] = useState(false);
+  const [showRecalculate, setShowRecalculate] = useState(false);
   const [showCalorieEdit, setShowCalorieEdit] = useState(false);
   const [calorieInput, setCalorieInput] = useState("");
 
@@ -197,10 +199,25 @@ const Index = () => {
             onExport={actions.exportJson}
             onImport={actions.importJson}
             onReset={actions.resetAll}
+            onRecalculate={() => setShowRecalculate(true)}
           />
         </div>
 
         <ProfileEditDialog open={showProfileEdit} onClose={() => setShowProfileEdit(false)} />
+        <RecalculateDialog
+          open={showRecalculate}
+          onClose={() => setShowRecalculate(false)}
+          onApply={(calories, meals, weight, targetWeight) => {
+            actions.setTargetCalories(calories);
+            actions.updateMeals(meals);
+            actions.setState((prev) => ({
+              ...prev,
+              currentWeight: weight,
+              startWeight: weight,
+              targetWeight,
+            }));
+          }}
+        />
       </main>
     </div>
   );
