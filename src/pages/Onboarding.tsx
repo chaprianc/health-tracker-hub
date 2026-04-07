@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { Apple, ChevronLeft, ChevronRight } from "lucide-react";
+import { calcRecommendedCalories, generatePersonalizedMeals } from "@/lib/dietCalculations";
 
 type OnboardingData = {
   age: string;
@@ -42,6 +43,18 @@ const Onboarding = () => {
     return true;
   };
 
+  const profileData = {
+    age: parseInt(data.age) || 25,
+    height: parseInt(data.height) || 170,
+    weight: parseFloat(data.weight) || 80,
+    gender: data.gender as "male" | "female",
+    activity_level: data.activity_level,
+    target_weight: parseFloat(data.target_weight) || 70,
+    is_vegetarian: data.is_vegetarian,
+  };
+
+  const recommendedCalories = calcRecommendedCalories(profileData);
+
   const handleSubmit = async () => {
     if (!user) return;
     setLoading(true);
@@ -63,8 +76,20 @@ const Onboarding = () => {
 
       if (error) throw error;
 
+      // Save personalized meals & calorie target to localStorage
+      const meals = generatePersonalizedMeals(profileData, recommendedCalories);
+      const storageKey = "dietAppState_v1";
+      const saved = localStorage.getItem(storageKey);
+      const existing = saved ? JSON.parse(saved) : {};
+      existing.targetCalories = recommendedCalories;
+      existing.meals = meals;
+      existing.currentWeight = profileData.weight;
+      existing.startWeight = profileData.weight;
+      existing.targetWeight = profileData.target_weight;
+      localStorage.setItem(storageKey, JSON.stringify(existing));
+
       await refreshProfile();
-      toast({ title: "הפרופיל נשמר! 🎉", description: "הדיאטה שלך מותאמת אישית" });
+      toast({ title: "הפרופיל נשמר! 🎉", description: `יעד קלוריות מומלץ: ${recommendedCalories} קק״ל` });
       navigate("/", { replace: true });
     } catch (err: any) {
       toast({ title: "שגיאה", description: err.message, variant: "destructive" });
@@ -238,7 +263,7 @@ const Onboarding = () => {
               </div>
 
               {/* Summary */}
-              <div className="rounded-xl bg-muted/50 p-4 space-y-2">
+              <div className="rounded-xl bg-muted/50 p-4 space-y-3">
                 <h3 className="text-sm font-bold text-foreground">סיכום הפרטים שלך</h3>
                 <div className="grid grid-cols-2 gap-2 text-sm text-muted-foreground">
                   <span>גיל: {data.age}</span>
@@ -247,6 +272,11 @@ const Onboarding = () => {
                   <span>יעד: {data.target_weight} ק״ג</span>
                   <span>מגדר: {data.gender === "male" ? "גבר" : "אישה"}</span>
                   <span>צמחוני: {data.is_vegetarian ? "כן" : "לא"}</span>
+                </div>
+                <div className="rounded-lg bg-primary/10 border border-primary/20 p-3 text-center">
+                  <p className="text-xs text-muted-foreground">יעד קלוריות יומי מומלץ</p>
+                  <p className="text-2xl font-bold text-primary">{recommendedCalories}</p>
+                  <p className="text-xs text-muted-foreground">קק״ל ליום</p>
                 </div>
               </div>
             </>
