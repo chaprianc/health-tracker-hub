@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { Apple, ChevronLeft, ChevronRight } from "lucide-react";
+import { calcRecommendedCalories, generatePersonalizedMeals } from "@/lib/dietCalculations";
 
 type OnboardingData = {
   age: string;
