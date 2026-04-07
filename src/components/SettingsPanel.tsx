@@ -51,6 +51,7 @@ export function SettingsPanel({ onExport, onImport, onReset, onRecalculate }: Se
           חישוב מחדש
         </button>
       )}
+      <button
         onClick={handleExport}
         className="flex items-center gap-2 rounded-lg bg-secondary px-4 py-2 text-sm font-medium text-secondary-foreground transition-colors hover:bg-secondary/80"
       >
