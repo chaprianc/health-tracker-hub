@@ -31,7 +31,7 @@ serve(async (req) => {
         messages: [
           {
             role: "system",
-            content: `You are a nutrition database. Given a food search query (Hebrew or English), return a JSON array of 5-8 matching food items with their calorie counts per typical serving. Each item should have: label (Hebrew name), calories (number), serving (serving description in Hebrew), emoji (single food emoji). Format: [{"label":"...","calories":...,"serving":"...","emoji":"..."}]. Be accurate. Only return the JSON array, no extra text.`,
+            content: `You are a nutrition database. Given a food search query (Hebrew or English), return a JSON array of 5-8 matching food items with nutritional info per typical serving. Each item: {"label":"Hebrew name","calories":<number>,"protein":<grams>,"carbs":<grams>,"fat":<grams>,"serving":"serving description in Hebrew","emoji":"single food emoji"}. Be accurate. Only return the JSON array, no extra text.`,
           },
           { role: "user", content: query.trim() },
         ],
@@ -57,6 +57,9 @@ serve(async (req) => {
         ? parsed.map((item: any) => ({
             label: String(item.label || "").slice(0, 100),
             calories: Math.round(Number(item.calories) || 0),
+            protein: Math.round(Number(item.protein) || 0),
+            carbs: Math.round(Number(item.carbs) || 0),
+            fat: Math.round(Number(item.fat) || 0),
             serving: String(item.serving || ""),
             emoji: String(item.emoji || "🍽️").slice(0, 4),
           }))
