@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      daily_logs: {
+        Row: {
+          calories_consumed: number
+          checked_items: string[]
+          created_at: string
+          id: string
+          log_date: string
+          total_score: number
+          updated_at: string
+          user_id: string
+          water_cups: number
+        }
+        Insert: {
+          calories_consumed?: number
+          checked_items?: string[]
+          created_at?: string
+          id?: string
+          log_date?: string
+          total_score?: number
+          updated_at?: string
+          user_id: string
+          water_cups?: number
+        }
+        Update: {
+          calories_consumed?: number
+          checked_items?: string[]
+          created_at?: string
+          id?: string
+          log_date?: string
+          total_score?: number
+          updated_at?: string
+          user_id?: string
+          water_cups?: number
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           activity_level: string | null
@@ -59,6 +95,54 @@ export type Database = {
           target_weight?: number | null
           updated_at?: string
           weight?: number | null
+        }
+        Relationships: []
+      }
+      user_settings: {
+        Row: {
+          best_streak: number
+          created_at: string
+          current_weight: number
+          id: string
+          meals: Json
+          start_weight: number
+          streak: number
+          success_days: number
+          target_calories: number
+          target_weight: number
+          updated_at: string
+          user_id: string
+          weight_history: Json
+        }
+        Insert: {
+          best_streak?: number
+          created_at?: string
+          current_weight?: number
+          id?: string
+          meals?: Json
+          start_weight?: number
+          streak?: number
+          success_days?: number
+          target_calories?: number
+          target_weight?: number
+          updated_at?: string
+          user_id: string
+          weight_history?: Json
+        }
+        Update: {
+          best_streak?: number
+          created_at?: string
+          current_weight?: number
+          id?: string
+          meals?: Json
+          start_weight?: number
+          streak?: number
+          success_days?: number
+          target_calories?: number
+          target_weight?: number
+          updated_at?: string
+          user_id?: string
+          weight_history?: Json
         }
         Relationships: []
       }

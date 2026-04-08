@@ -5,6 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { Apple, ChevronLeft, ChevronRight } from "lucide-react";
 import { calcRecommendedCalories, generatePersonalizedMeals } from "@/lib/dietCalculations";
+import type { MealGroup } from "@/hooks/useDietAppState";
 
 type OnboardingData = {
   age: string;
@@ -76,17 +77,20 @@ const Onboarding = () => {
 
       if (error) throw error;
 
-      // Save personalized meals & calorie target to localStorage
-      const meals = generatePersonalizedMeals(profileData, recommendedCalories);
-      const storageKey = "dietAppState_v1";
-      const saved = localStorage.getItem(storageKey);
-      const existing = saved ? JSON.parse(saved) : {};
-      existing.targetCalories = recommendedCalories;
-      existing.meals = meals;
-      existing.currentWeight = profileData.weight;
-      existing.startWeight = profileData.weight;
-      existing.targetWeight = profileData.target_weight;
-      localStorage.setItem(storageKey, JSON.stringify(existing));
+      // Save personalized meals & calorie target to cloud
+      const meals: MealGroup[] = generatePersonalizedMeals(profileData, recommendedCalories);
+      await supabase.from("user_settings").upsert({
+        user_id: user.id,
+        target_calories: recommendedCalories,
+        current_weight: profileData.weight,
+        start_weight: profileData.weight,
+        target_weight: profileData.target_weight,
+        meals: meals as any,
+        weight_history: [] as any,
+      }, { onConflict: "user_id" });
+
+      // Clean up old localStorage if exists
+      localStorage.removeItem("dietAppState_v1");
 
       await refreshProfile();
       toast({ title: "הפרופיל נשמר! 🎉", description: `יעד קלוריות מומלץ: ${recommendedCalories} קק״ל` });
