@@ -5,6 +5,9 @@ export interface ChecklistItemData {
   label: string;
   calories: number;
   emoji: string;
+  protein?: number;
+  carbs?: number;
+  fat?: number;
 }
 
 interface MealChecklistProps {
@@ -41,6 +44,7 @@ export function MealChecklist({ title, time, items, checkedItems, onToggle, onEd
       <div className="space-y-2">
         {items.map((item) => {
           const checked = checkedItems.has(item.id);
+          const hasMacros = (item.protein || item.carbs || item.fat);
           return (
             <button
               key={item.id}
@@ -57,11 +61,20 @@ export function MealChecklist({ title, time, items, checkedItems, onToggle, onEd
                 <Circle className="h-5 w-5 shrink-0 text-muted-foreground/40" />
               )}
               <span className="text-lg">{item.emoji}</span>
-              <span className={`flex-1 text-sm ${checked ? "line-through opacity-60" : ""}`}>
-                {item.label}
-              </span>
+              <div className="flex-1 min-w-0">
+                <span className={`text-sm block ${checked ? "line-through opacity-60" : ""}`}>
+                  {item.label}
+                </span>
+                {hasMacros ? (
+                  <span className="flex gap-2 text-[10px] text-muted-foreground/70 mt-0.5">
+                    <span>ח {item.protein || 0}g</span>
+                    <span>פ {item.carbs || 0}g</span>
+                    <span>ש {item.fat || 0}g</span>
+                  </span>
+                ) : null}
+              </div>
               {item.calories > 0 && (
-                <span className="text-xs text-muted-foreground">{item.calories} קל׳</span>
+                <span className="text-xs text-muted-foreground shrink-0">{item.calories} קל׳</span>
               )}
             </button>
           );

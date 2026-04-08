@@ -31,7 +31,7 @@ serve(async (req) => {
         messages: [
           {
             role: "system",
-            content: `You are a nutrition expert. Given a food item name (in Hebrew or English), return ONLY a JSON object with the estimated calories per typical serving. Format: {"calories": <number>, "serving": "<description in Hebrew>"}. Be accurate based on common nutritional databases. Do not add any extra text.`,
+            content: `You are a nutrition expert. Given a food item name (in Hebrew or English), return ONLY a JSON object with estimated nutritional values per typical serving. Format: {"calories": <number>, "protein": <number in grams>, "carbs": <number in grams>, "fat": <number in grams>, "serving": "<description in Hebrew>"}. Be accurate based on common nutritional databases. Do not add any extra text.`,
           },
           {
             role: "user",
@@ -53,16 +53,21 @@ serve(async (req) => {
     const data = await response.json();
     const content = data.choices?.[0]?.message?.content || "";
 
-    // Extract JSON from response
     const jsonMatch = content.match(/\{[\s\S]*?\}/);
     if (jsonMatch) {
       const parsed = JSON.parse(jsonMatch[0]);
-      return new Response(JSON.stringify({ calories: Math.round(parsed.calories || 0), serving: parsed.serving || "" }), {
+      return new Response(JSON.stringify({
+        calories: Math.round(parsed.calories || 0),
+        protein: Math.round(parsed.protein || 0),
+        carbs: Math.round(parsed.carbs || 0),
+        fat: Math.round(parsed.fat || 0),
+        serving: parsed.serving || "",
+      }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    return new Response(JSON.stringify({ calories: 0, serving: "" }), {
+    return new Response(JSON.stringify({ calories: 0, protein: 0, carbs: 0, fat: 0, serving: "" }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {

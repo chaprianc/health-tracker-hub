@@ -15,6 +15,9 @@ interface EditMealDialogProps {
 interface FoodSuggestion {
   label: string;
   calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
   serving: string;
   emoji: string;
 }
@@ -26,7 +29,6 @@ export function EditMealDialog({ meal, mealIndex, open, onClose, onSave }: EditM
   const [title, setTitle] = useState(meal.title);
   const [loadingIdx, setLoadingIdx] = useState<number | null>(null);
 
-  // Food search state
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<FoodSuggestion[]>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -36,7 +38,7 @@ export function EditMealDialog({ meal, mealIndex, open, onClose, onSave }: EditM
 
   const addItem = () => {
     const id = `custom_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
-    setItems((prev) => [...prev, { id, label: "", calories: 0, emoji: "🍽️" }]);
+    setItems((prev) => [...prev, { id, label: "", calories: 0, emoji: "🍽️", protein: 0, carbs: 0, fat: 0 }]);
   };
 
   const addItemFromSuggestion = (suggestion: FoodSuggestion) => {
@@ -45,11 +47,14 @@ export function EditMealDialog({ meal, mealIndex, open, onClose, onSave }: EditM
       id,
       label: suggestion.label,
       calories: suggestion.calories,
+      protein: suggestion.protein,
+      carbs: suggestion.carbs,
+      fat: suggestion.fat,
       emoji: suggestion.emoji || "🍽️",
     }]);
     toast({
       title: `${suggestion.label} נוסף`,
-      description: `${suggestion.calories} קלוריות · ${suggestion.serving}`,
+      description: `${suggestion.calories} קל׳ · ח ${suggestion.protein}g · פ ${suggestion.carbs}g · ש ${suggestion.fat}g`,
     });
   };
 
@@ -79,10 +84,16 @@ export function EditMealDialog({ meal, mealIndex, open, onClose, onSave }: EditM
       if (error) throw error;
 
       if (data?.calories && data.calories > 0) {
-        updateItem(idx, "calories", data.calories);
+        setItems((prev) =>
+          prev.map((it, i) =>
+            i === idx
+              ? { ...it, calories: data.calories, protein: data.protein || 0, carbs: data.carbs || 0, fat: data.fat || 0 }
+              : it
+          )
+        );
         toast({
           title: `${data.calories} קלוריות`,
-          description: data.serving ? `מנה: ${data.serving}` : undefined,
+          description: `ח ${data.protein || 0}g · פ ${data.carbs || 0}g · ש ${data.fat || 0}g${data.serving ? ` · ${data.serving}` : ""}`,
         });
       } else {
         toast({ title: "לא הצלחתי למצוא מידע תזונתי", variant: "destructive" });
@@ -130,6 +141,9 @@ export function EditMealDialog({ meal, mealIndex, open, onClose, onSave }: EditM
         ...i,
         label: i.label.trim().slice(0, 100),
         calories: Math.max(0, Math.min(5000, i.calories)),
+        protein: Math.max(0, i.protein || 0),
+        carbs: Math.max(0, i.carbs || 0),
+        fat: Math.max(0, i.fat || 0),
       }));
     onSave(mealIndex, { title: title.trim().slice(0, 50) || meal.title, items: cleaned });
     onClose();
@@ -149,7 +163,6 @@ export function EditMealDialog({ meal, mealIndex, open, onClose, onSave }: EditM
           </button>
         </div>
 
-        {/* Title */}
         <input
           value={title}
           onChange={(e) => setTitle(e.target.value)}
@@ -187,7 +200,6 @@ export function EditMealDialog({ meal, mealIndex, open, onClose, onSave }: EditM
                 </button>
               </div>
 
-              {/* Results */}
               {searchResults.length > 0 && (
                 <div className="max-h-48 space-y-1 overflow-y-auto">
                   {searchResults.map((result, i) => (
@@ -200,6 +212,11 @@ export function EditMealDialog({ meal, mealIndex, open, onClose, onSave }: EditM
                       <div className="min-w-0 flex-1">
                         <div className="text-sm font-medium text-card-foreground truncate">{result.label}</div>
                         <div className="text-xs text-muted-foreground">{result.serving}</div>
+                        <div className="flex gap-2 text-[10px] text-muted-foreground mt-0.5">
+                          <span>ח {result.protein}g</span>
+                          <span>פ {result.carbs}g</span>
+                          <span>ש {result.fat}g</span>
+                        </div>
                       </div>
                       <span className="shrink-0 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
                         {result.calories} קל׳
@@ -249,7 +266,7 @@ export function EditMealDialog({ meal, mealIndex, open, onClose, onSave }: EditM
                   onClick={() => lookupCalories(idx)}
                   disabled={loadingIdx !== null}
                   className="rounded p-1 text-primary transition-colors hover:bg-primary/10 disabled:opacity-50"
-                  title="השלם קלוריות באמצעות AI"
+                  title="השלם ערכים תזונתיים באמצעות AI"
                 >
                   {loadingIdx === idx ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
@@ -262,11 +279,18 @@ export function EditMealDialog({ meal, mealIndex, open, onClose, onSave }: EditM
                   <Trash2 className="h-4 w-4" />
                 </button>
               </div>
+              {/* Macros row */}
+              {(item.protein || item.carbs || item.fat) ? (
+                <div className="flex gap-3 px-2 text-[11px] text-muted-foreground">
+                  <span>חלבון: {item.protein || 0}g</span>
+                  <span>פחמימות: {item.carbs || 0}g</span>
+                  <span>שומן: {item.fat || 0}g</span>
+                </div>
+              ) : null}
             </div>
           ))}
         </div>
 
-        {/* Add item */}
         <button
           onClick={addItem}
           className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-border py-2 text-sm text-muted-foreground transition-colors hover:bg-secondary"
@@ -275,7 +299,6 @@ export function EditMealDialog({ meal, mealIndex, open, onClose, onSave }: EditM
           הוסף פריט ידנית
         </button>
 
-        {/* Actions */}
         <div className="mt-4 flex gap-2">
           <button
             onClick={handleSave}

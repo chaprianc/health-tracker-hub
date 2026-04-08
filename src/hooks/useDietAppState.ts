@@ -4,7 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 
 type WeightPoint = { date: string; weight: number };
 
-export type MealItem = { id: string; label: string; calories: number; emoji: string };
+export type MealItem = { id: string; label: string; calories: number; emoji: string; protein?: number; carbs?: number; fat?: number };
 export type MealGroup = { title: string; time?: string; items: MealItem[] };
 
 export type DailyLog = {
