@@ -1,6 +1,8 @@
-import { useState } from "react";
-import { X, Plus, Trash2 } from "lucide-react";
+import { useState, useCallback } from "react";
+import { X, Plus, Trash2, Sparkles, Loader2 } from "lucide-react";
 import type { MealItem, MealGroup } from "@/hooks/useDietAppState";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
 
 interface EditMealDialogProps {
   meal: MealGroup;
@@ -15,6 +17,7 @@ const EMOJI_OPTIONS = ["🥚", "🍞", "🥒", "🧀", "🍗", "🍚", "🥗", "
 export function EditMealDialog({ meal, mealIndex, open, onClose, onSave }: EditMealDialogProps) {
   const [items, setItems] = useState<MealItem[]>(() => meal.items.map((i) => ({ ...i })));
   const [title, setTitle] = useState(meal.title);
+  const [loadingIdx, setLoadingIdx] = useState<number | null>(null);
 
   if (!open) return null;
 
@@ -31,6 +34,38 @@ export function EditMealDialog({ meal, mealIndex, open, onClose, onSave }: EditM
     setItems((prev) =>
       prev.map((item, i) => (i === idx ? { ...item, [field]: value } : item))
     );
+  };
+
+  const lookupCalories = async (idx: number) => {
+    const item = items[idx];
+    if (!item?.label?.trim() || item.label.trim().length < 2) {
+      toast({ title: "הזן שם מזון לפני חיפוש קלוריות", variant: "destructive" });
+      return;
+    }
+
+    setLoadingIdx(idx);
+    try {
+      const { data, error } = await supabase.functions.invoke("lookup-calories", {
+        body: { foodName: item.label.trim() },
+      });
+
+      if (error) throw error;
+
+      if (data?.calories && data.calories > 0) {
+        updateItem(idx, "calories", data.calories);
+        toast({
+          title: `${data.calories} קלוריות`,
+          description: data.serving ? `מנה: ${data.serving}` : undefined,
+        });
+      } else {
+        toast({ title: "לא הצלחתי למצוא מידע תזונתי", variant: "destructive" });
+      }
+    } catch (e) {
+      console.error("Calorie lookup error:", e);
+      toast({ title: "שגיאה בחיפוש קלוריות", variant: "destructive" });
+    } finally {
+      setLoadingIdx(null);
+    }
   };
 
   const handleSave = () => {
@@ -71,42 +106,58 @@ export function EditMealDialog({ meal, mealIndex, open, onClose, onSave }: EditM
         {/* Items */}
         <div className="max-h-64 space-y-3 overflow-y-auto">
           {items.map((item, idx) => (
-            <div key={item.id} className="flex items-center gap-2 rounded-lg bg-secondary/50 p-2">
-              {/* Emoji picker */}
-              <select
-                value={item.emoji}
-                onChange={(e) => updateItem(idx, "emoji", e.target.value)}
-                className="w-12 rounded bg-background p-1 text-center text-lg"
-              >
-                {EMOJI_OPTIONS.map((e) => (
-                  <option key={e} value={e}>{e}</option>
-                ))}
-              </select>
+            <div key={item.id} className="space-y-1">
+              <div className="flex items-center gap-2 rounded-lg bg-secondary/50 p-2">
+                {/* Emoji picker */}
+                <select
+                  value={item.emoji}
+                  onChange={(e) => updateItem(idx, "emoji", e.target.value)}
+                  className="w-12 rounded bg-background p-1 text-center text-lg"
+                >
+                  {EMOJI_OPTIONS.map((e) => (
+                    <option key={e} value={e}>{e}</option>
+                  ))}
+                </select>
 
-              {/* Label */}
-              <input
-                value={item.label}
-                onChange={(e) => updateItem(idx, "label", e.target.value)}
-                maxLength={100}
-                placeholder="שם הפריט"
-                className="min-w-0 flex-1 rounded border border-input bg-background px-2 py-1 text-sm outline-none focus:ring-1 focus:ring-ring"
-              />
+                {/* Label */}
+                <input
+                  value={item.label}
+                  onChange={(e) => updateItem(idx, "label", e.target.value)}
+                  maxLength={100}
+                  placeholder="שם הפריט"
+                  className="min-w-0 flex-1 rounded border border-input bg-background px-2 py-1 text-sm outline-none focus:ring-1 focus:ring-ring"
+                />
 
-              {/* Calories */}
-              <input
-                type="number"
-                value={item.calories || ""}
-                onChange={(e) => updateItem(idx, "calories", Math.max(0, parseInt(e.target.value) || 0))}
-                placeholder="קל׳"
-                min={0}
-                max={5000}
-                className="w-16 rounded border border-input bg-background px-2 py-1 text-center text-sm outline-none focus:ring-1 focus:ring-ring"
-              />
+                {/* Calories */}
+                <input
+                  type="number"
+                  value={item.calories || ""}
+                  onChange={(e) => updateItem(idx, "calories", Math.max(0, parseInt(e.target.value) || 0))}
+                  placeholder="קל׳"
+                  min={0}
+                  max={5000}
+                  className="w-16 rounded border border-input bg-background px-2 py-1 text-center text-sm outline-none focus:ring-1 focus:ring-ring"
+                />
 
-              {/* Delete */}
-              <button onClick={() => removeItem(idx)} className="rounded p-1 text-muted-foreground hover:text-destructive">
-                <Trash2 className="h-4 w-4" />
-              </button>
+                {/* AI lookup */}
+                <button
+                  onClick={() => lookupCalories(idx)}
+                  disabled={loadingIdx !== null}
+                  className="rounded p-1 text-primary transition-colors hover:bg-primary/10 disabled:opacity-50"
+                  title="השלם קלוריות באמצעות AI"
+                >
+                  {loadingIdx === idx ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Sparkles className="h-4 w-4" />
+                  )}
+                </button>
+
+                {/* Delete */}
+                <button onClick={() => removeItem(idx)} className="rounded p-1 text-muted-foreground hover:text-destructive">
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              </div>
             </div>
           ))}
         </div>
