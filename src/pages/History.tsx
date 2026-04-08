@@ -33,7 +33,7 @@ function formatDateFull(dateStr: string) {
 }
 
 export default function History() {
-  const { state } = useDietAppState();
+  const { state, loaded } = useDietAppState();
   const logs = [...state.dailyHistory].reverse();
 
   const chartData = [...state.dailyHistory].slice(-14).map((log) => ({
