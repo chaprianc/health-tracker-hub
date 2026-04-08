@@ -68,5 +68,22 @@
   body {
     @apply bg-background text-foreground font-sans;
     font-family: 'Rubik', sans-serif;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-font-smoothing: antialiased;
+  }
+}
+
+/* Safe area for notched devices */
+.safe-top {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Smooth scrolling on iOS */
+@supports (-webkit-overflow-scrolling: touch) {
+  .min-h-screen {
+    min-height: -webkit-fill-available;
   }
 }
