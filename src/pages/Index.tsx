@@ -16,7 +16,7 @@ import type { MealGroup } from "@/hooks/useDietAppState";
 import { Apple, Settings2, CalendarDays, LogOut, User, Pencil } from "lucide-react";
 
 const Index = () => {
-  const { state, computed, actions } = useDietAppState();
+  const { state, computed, actions, loaded } = useDietAppState();
   const { profile, signOut } = useAuth();
   const [editingMeal, setEditingMeal] = useState<number | null>(null);
   const [showProfileEdit, setShowProfileEdit] = useState(false);
