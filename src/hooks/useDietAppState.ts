@@ -109,7 +109,15 @@ export function useDietAppState() {
 
   // ─── Load from cloud ───
   useEffect(() => {
-    if (!userId) return;
+    if (!userId) {
+      setLoaded(true);
+      return;
+    }
+
+    let active = true;
+    const fallback = setTimeout(() => {
+      if (active) setLoaded(true);
+    }, 5000);
 
     const load = async () => {
       try {
@@ -159,6 +167,8 @@ export function useDietAppState() {
           const meals = (settings.meals as any[])?.length > 0 ? settings.meals as unknown as MealGroup[] : DEFAULT_MEALS;
           const weightHistory = (settings.weight_history as any[]) || [];
 
+          if (!active) return;
+
           setState({
             currentWeight: Number(settings.current_weight),
             targetWeight: Number(settings.target_weight),
@@ -195,6 +205,8 @@ export function useDietAppState() {
             lastResetDate: localData.lastResetDate ?? today,
             dailyHistory: localData.dailyHistory ?? [],
           };
+
+          if (!active) return;
 
           setState(migrated);
 
@@ -239,6 +251,8 @@ export function useDietAppState() {
           localStorage.removeItem(STORAGE_KEY);
         } else {
           // No data anywhere - create defaults
+          if (!active) return;
+
           setState(initial);
           await supabase.from("user_settings").upsert({
             user_id: userId,
@@ -251,14 +265,19 @@ export function useDietAppState() {
           }, { onConflict: "user_id" });
         }
 
-        setLoaded(true);
+        if (active) setLoaded(true);
       } catch (e) {
         console.error("Failed to load cloud state", e);
-        setLoaded(true);
+        if (active) setLoaded(true);
       }
     };
 
     load();
+
+    return () => {
+      active = false;
+      clearTimeout(fallback);
+    };
   }, [userId]);
 
   // ─── Debounced save to cloud ───
