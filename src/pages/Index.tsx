@@ -40,40 +40,40 @@ const Index = () => {
   };
 
   return (
-    <div dir="rtl" className="min-h-screen bg-background">
+    <div dir="rtl" className="min-h-screen bg-background pb-20 md:pb-0">
       {/* Header */}
-      <header className="border-b border-border bg-card/80 backdrop-blur-sm">
-        <div className="mx-auto flex max-w-4xl items-center gap-3 px-4 py-4">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground">
+      <header className="sticky top-0 z-40 border-b border-border bg-card/80 backdrop-blur-sm safe-top">
+        <div className="mx-auto flex max-w-4xl items-center gap-3 px-4 py-3 md:py-4">
+          <div className="flex h-9 w-9 md:h-10 md:w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground">
             <Apple className="h-5 w-5" />
           </div>
-          <div>
-            <h1 className="text-lg font-bold text-foreground">הדיאטה שלי</h1>
-            <p className="text-xs text-muted-foreground">מעקב יומי • תזונה בריאה</p>
+          <div className="min-w-0">
+            <h1 className="text-base md:text-lg font-bold text-foreground truncate">הדיאטה שלי</h1>
+            <p className="text-[11px] md:text-xs text-muted-foreground">מעקב יומי • תזונה בריאה</p>
           </div>
-          <div className="mr-auto flex items-center gap-2">
+          <div className="mr-auto flex items-center gap-1.5 md:gap-2">
             <Link
               to="/history"
-              className="flex items-center gap-1.5 rounded-lg bg-secondary px-3 py-2 text-xs font-medium text-secondary-foreground transition-colors hover:bg-secondary/80"
+              className="hidden md:flex items-center gap-1.5 rounded-lg bg-secondary px-3 py-2 text-xs font-medium text-secondary-foreground transition-colors hover:bg-secondary/80"
             >
               <CalendarDays className="h-3.5 w-3.5" />
               היסטוריה
             </Link>
             <button
               onClick={() => setShowProfileEdit(true)}
-              className="flex items-center gap-1.5 rounded-lg bg-secondary px-3 py-2 text-xs text-muted-foreground hover:bg-secondary/80 transition-colors"
+              className="flex items-center gap-1 md:gap-1.5 rounded-lg bg-secondary px-2 md:px-3 py-2 text-xs text-muted-foreground hover:bg-secondary/80 transition-colors"
             >
               {profile?.avatar_url ? (
                 <img src={profile.avatar_url} alt="" className="h-5 w-5 rounded-full object-cover" />
               ) : (
                 <User className="h-3.5 w-3.5" />
               )}
-              <span className="max-w-[100px] truncate">{profile?.display_name || "משתמש"}</span>
+              <span className="hidden sm:inline max-w-[100px] truncate">{profile?.display_name || "משתמש"}</span>
               <Pencil className="h-3 w-3" />
             </button>
             <button
               onClick={signOut}
-              className="flex items-center gap-1 rounded-lg bg-secondary px-2.5 py-2 text-xs text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
+              className="flex items-center gap-1 rounded-lg bg-secondary px-2 md:px-2.5 py-2 text-xs text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
               title="התנתק"
             >
               <LogOut className="h-3.5 w-3.5" />
@@ -82,7 +82,27 @@ const Index = () => {
         </div>
       </header>
 
-      <main className="mx-auto max-w-4xl space-y-5 px-4 py-6">
+      {/* Mobile bottom navigation */}
+      <nav className="fixed bottom-0 left-0 right-0 z-40 flex md:hidden items-center justify-around border-t border-border bg-card/95 backdrop-blur-sm px-2 py-2 safe-bottom">
+        <Link to="/" className="flex flex-col items-center gap-0.5 rounded-lg px-3 py-1.5 text-primary">
+          <Apple className="h-5 w-5" />
+          <span className="text-[10px] font-medium">ראשי</span>
+        </Link>
+        <Link to="/history" className="flex flex-col items-center gap-0.5 rounded-lg px-3 py-1.5 text-muted-foreground hover:text-primary transition-colors">
+          <CalendarDays className="h-5 w-5" />
+          <span className="text-[10px] font-medium">היסטוריה</span>
+        </Link>
+        <button onClick={() => setShowProfileEdit(true)} className="flex flex-col items-center gap-0.5 rounded-lg px-3 py-1.5 text-muted-foreground hover:text-primary transition-colors">
+          <User className="h-5 w-5" />
+          <span className="text-[10px] font-medium">פרופיל</span>
+        </button>
+        <button onClick={() => setShowRecalculate(true)} className="flex flex-col items-center gap-0.5 rounded-lg px-3 py-1.5 text-muted-foreground hover:text-primary transition-colors">
+          <Settings2 className="h-5 w-5" />
+          <span className="text-[10px] font-medium">הגדרות</span>
+        </button>
+      </nav>
+
+      <main className="mx-auto max-w-4xl space-y-4 md:space-y-5 px-3 md:px-4 py-4 md:py-6">
         {/* Stats */}
         <StatsCards
           currentWeight={state.currentWeight}
