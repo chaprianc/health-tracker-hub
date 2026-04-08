@@ -102,6 +102,7 @@ const Index = () => {
         </button>
       </nav>
 
+      <main className="mx-auto max-w-4xl space-y-4 md:space-y-5 px-3 md:px-4 py-4 md:py-6">
         {!loaded ? (
           <div className="flex items-center justify-center py-20">
             <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
