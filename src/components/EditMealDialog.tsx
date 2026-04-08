@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { X, Plus, Trash2, Sparkles, Loader2, Search } from "lucide-react";
+import { useState, useRef } from "react";
+import { X, Plus, Trash2, Sparkles, Loader2, Search, Camera, ImageIcon, Pencil, Check } from "lucide-react";
 import type { MealItem, MealGroup } from "@/hooks/useDietAppState";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -22,6 +22,18 @@ interface FoodSuggestion {
   emoji: string;
 }
 
+interface AnalyzedItem {
+  label: string;
+  calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+  serving: string;
+  emoji: string;
+  selected: boolean;
+  editing: boolean;
+}
+
 const EMOJI_OPTIONS = ["🥚", "🍞", "🥒", "🧀", "🍗", "🍚", "🥗", "🥄", "🐟", "🥦", "🌾", "🍎", "🥛", "🥜", "🥩", "🍕", "🥑", "🍌", "🫘", "🥣"];
 
 export function EditMealDialog({ meal, mealIndex, open, onClose, onSave }: EditMealDialogProps) {
@@ -33,6 +45,13 @@ export function EditMealDialog({ meal, mealIndex, open, onClose, onSave }: EditM
   const [searchResults, setSearchResults] = useState<FoodSuggestion[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
+
+  // Photo analysis state
+  const [showPhotoAnalysis, setShowPhotoAnalysis] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [analyzedItems, setAnalyzedItems] = useState<AnalyzedItem[]>([]);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   if (!open) return null;
 
@@ -134,6 +153,85 @@ export function EditMealDialog({ meal, mealIndex, open, onClose, onSave }: EditM
     }
   };
 
+  const handlePhotoUpload = async (file: File) => {
+    if (!file.type.startsWith("image/")) {
+      toast({ title: "אנא בחר קובץ תמונה", variant: "destructive" });
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      toast({ title: "התמונה גדולה מדי (מקסימום 10MB)", variant: "destructive" });
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      const base64 = e.target?.result as string;
+      setPhotoPreview(base64);
+      setIsAnalyzing(true);
+      setAnalyzedItems([]);
+
+      try {
+        const { data, error } = await supabase.functions.invoke("analyze-food-image", {
+          body: { imageBase64: base64 },
+        });
+
+        if (error) throw error;
+
+        if (data?.error) {
+          toast({ title: data.error, variant: "destructive" });
+          return;
+        }
+
+        if (data?.items?.length > 0) {
+          setAnalyzedItems(data.items.map((item: any) => ({ ...item, selected: true, editing: false })));
+          toast({ title: `זוהו ${data.items.length} פריטי מזון! 📸` });
+        } else {
+          toast({ title: "לא זוהו פריטי מזון בתמונה", variant: "destructive" });
+        }
+      } catch (e) {
+        console.error("Photo analysis error:", e);
+        toast({ title: "שגיאה בניתוח התמונה", variant: "destructive" });
+      } finally {
+        setIsAnalyzing(false);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const toggleAnalyzedItem = (idx: number) => {
+    setAnalyzedItems((prev) => prev.map((item, i) => i === idx ? { ...item, selected: !item.selected } : item));
+  };
+
+  const toggleEditAnalyzedItem = (idx: number) => {
+    setAnalyzedItems((prev) => prev.map((item, i) => i === idx ? { ...item, editing: !item.editing } : item));
+  };
+
+  const updateAnalyzedItem = (idx: number, field: string, value: string | number) => {
+    setAnalyzedItems((prev) => prev.map((item, i) => i === idx ? { ...item, [field]: value } : item));
+  };
+
+  const addAnalyzedItemsToMeal = () => {
+    const selected = analyzedItems.filter((item) => item.selected);
+    if (selected.length === 0) {
+      toast({ title: "בחר לפחות פריט אחד להוספה", variant: "destructive" });
+      return;
+    }
+    const newItems = selected.map((item) => ({
+      id: `photo_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+      label: item.label,
+      calories: item.calories,
+      protein: item.protein,
+      carbs: item.carbs,
+      fat: item.fat,
+      emoji: item.emoji,
+    }));
+    setItems((prev) => [...prev, ...newItems]);
+    toast({ title: `נוספו ${selected.length} פריטים מהתמונה ✅` });
+    setShowPhotoAnalysis(false);
+    setAnalyzedItems([]);
+    setPhotoPreview(null);
+  };
+
   const handleSave = () => {
     const cleaned = items
       .filter((i) => i.label.trim().length > 0)
@@ -173,13 +271,156 @@ export function EditMealDialog({ meal, mealIndex, open, onClose, onSave }: EditM
 
         {/* AI Food Search */}
         <div className="mb-3">
-          <button
-            onClick={() => { setShowSearch(!showSearch); setSearchResults([]); setSearchQuery(""); }}
-            className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary/10 py-2 text-sm font-medium text-primary transition-colors hover:bg-primary/20"
-          >
-            <Search className="h-4 w-4" />
-            חיפוש מזון חכם עם AI
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={() => { setShowSearch(!showSearch); setSearchResults([]); setSearchQuery(""); setShowPhotoAnalysis(false); }}
+              className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-primary/10 py-2 text-sm font-medium text-primary transition-colors hover:bg-primary/20"
+            >
+              <Search className="h-4 w-4" />
+              חיפוש מזון
+            </button>
+            <button
+              onClick={() => { setShowPhotoAnalysis(!showPhotoAnalysis); setShowSearch(false); setAnalyzedItems([]); setPhotoPreview(null); }}
+              className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-accent py-2 text-sm font-medium text-primary transition-colors hover:bg-accent/80"
+            >
+              <Camera className="h-4 w-4" />
+              צלם ארוחה
+            </button>
+          </div>
+
+          {/* Photo Analysis Panel */}
+          {showPhotoAnalysis && (
+            <div className="mt-2 rounded-lg border border-border bg-secondary/30 p-3 space-y-3">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                capture="environment"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) handlePhotoUpload(file);
+                  e.target.value = "";
+                }}
+              />
+
+              {!photoPreview && !isAnalyzing && (
+                <div className="flex flex-col items-center gap-3 py-4">
+                  <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                    <ImageIcon className="h-8 w-8" />
+                  </div>
+                  <p className="text-sm text-muted-foreground text-center">צלם או העלה תמונה של ארוחה<br />וה-AI יזהה את פריטי המזון</p>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => fileInputRef.current?.click()}
+                      className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+                    >
+                      <Camera className="h-4 w-4" />
+                      צלם / בחר תמונה
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {photoPreview && (
+                <div className="relative">
+                  <img src={photoPreview} alt="ארוחה" className="w-full max-h-40 rounded-lg object-cover" />
+                  <button
+                    onClick={() => { setPhotoPreview(null); setAnalyzedItems([]); }}
+                    className="absolute top-1 left-1 rounded-full bg-foreground/60 p-1 text-background hover:bg-foreground/80"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </div>
+              )}
+
+              {isAnalyzing && (
+                <div className="flex items-center justify-center gap-2 py-4">
+                  <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                  <span className="text-sm text-muted-foreground">מנתח את התמונה...</span>
+                </div>
+              )}
+
+              {analyzedItems.length > 0 && (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm font-medium text-card-foreground">פריטים שזוהו:</p>
+                    <button
+                      onClick={() => fileInputRef.current?.click()}
+                      className="text-xs text-primary hover:underline"
+                    >
+                      צלם שוב
+                    </button>
+                  </div>
+                  <div className="max-h-48 space-y-1 overflow-y-auto">
+                    {analyzedItems.map((item, i) => (
+                      <div key={i} className={`rounded-lg border p-2 transition-colors ${item.selected ? "border-primary bg-primary/5" : "border-border bg-background opacity-60"}`}>
+                        {item.editing ? (
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-2">
+                              <input
+                                value={item.label}
+                                onChange={(e) => updateAnalyzedItem(i, "label", e.target.value)}
+                                className="min-w-0 flex-1 rounded border border-input bg-background px-2 py-1 text-sm outline-none focus:ring-1 focus:ring-ring"
+                              />
+                              <button onClick={() => toggleEditAnalyzedItem(i)} className="rounded p-1 text-primary hover:bg-primary/10">
+                                <Check className="h-4 w-4" />
+                              </button>
+                            </div>
+                            <div className="grid grid-cols-4 gap-1">
+                              <div>
+                                <label className="text-[10px] text-muted-foreground">קל׳</label>
+                                <input type="number" value={item.calories} onChange={(e) => updateAnalyzedItem(i, "calories", Math.max(0, parseInt(e.target.value) || 0))} className="w-full rounded border border-input bg-background px-1 py-0.5 text-center text-xs outline-none" />
+                              </div>
+                              <div>
+                                <label className="text-[10px] text-muted-foreground">חלבון</label>
+                                <input type="number" value={item.protein} onChange={(e) => updateAnalyzedItem(i, "protein", Math.max(0, parseInt(e.target.value) || 0))} className="w-full rounded border border-input bg-background px-1 py-0.5 text-center text-xs outline-none" />
+                              </div>
+                              <div>
+                                <label className="text-[10px] text-muted-foreground">פחמימות</label>
+                                <input type="number" value={item.carbs} onChange={(e) => updateAnalyzedItem(i, "carbs", Math.max(0, parseInt(e.target.value) || 0))} className="w-full rounded border border-input bg-background px-1 py-0.5 text-center text-xs outline-none" />
+                              </div>
+                              <div>
+                                <label className="text-[10px] text-muted-foreground">שומן</label>
+                                <input type="number" value={item.fat} onChange={(e) => updateAnalyzedItem(i, "fat", Math.max(0, parseInt(e.target.value) || 0))} className="w-full rounded border border-input bg-background px-1 py-0.5 text-center text-xs outline-none" />
+                              </div>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-2">
+                            <button onClick={() => toggleAnalyzedItem(i)} className={`shrink-0 flex h-5 w-5 items-center justify-center rounded border-2 transition-colors ${item.selected ? "border-primary bg-primary text-primary-foreground" : "border-muted-foreground"}`}>
+                              {item.selected && <Check className="h-3 w-3" />}
+                            </button>
+                            <span className="text-lg">{item.emoji}</span>
+                            <div className="min-w-0 flex-1">
+                              <div className="text-sm font-medium text-card-foreground truncate">{item.label}</div>
+                              <div className="text-xs text-muted-foreground">{item.serving}</div>
+                              <div className="flex gap-2 text-[10px] text-muted-foreground mt-0.5">
+                                <span>ח {item.protein}g</span>
+                                <span>פ {item.carbs}g</span>
+                                <span>ש {item.fat}g</span>
+                              </div>
+                            </div>
+                            <span className="shrink-0 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">{item.calories} קל׳</span>
+                            <button onClick={() => toggleEditAnalyzedItem(i)} className="shrink-0 rounded p-1 text-muted-foreground hover:text-primary">
+                              <Pencil className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                  <button
+                    onClick={addAnalyzedItemsToMeal}
+                    className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+                  >
+                    <Plus className="h-4 w-4" />
+                    הוסף {analyzedItems.filter(i => i.selected).length} פריטים לארוחה
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
 
           {showSearch && (
             <div className="mt-2 rounded-lg border border-border bg-secondary/30 p-3 space-y-2">
