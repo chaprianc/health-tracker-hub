@@ -71,7 +71,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
-        fetchProfile(session.user.id).then(() => setLoading(false));
+        fetchProfile(session.user.id)
+          .catch((e) => console.error("Failed to fetch profile in getSession", e))
+          .finally(() => setLoading(false));
       } else {
         setLoading(false);
       }
