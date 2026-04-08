@@ -1,4 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
 type WeightPoint = { date: string; weight: number };
 
@@ -72,63 +74,19 @@ const DEFAULT_MEALS: MealGroup[] = [
   },
 ];
 
-const STORAGE_KEY = "dietAppState_v1";
-
 function getTodayStr() {
   return new Date().toISOString().slice(0, 10);
 }
 
-function serializeState(state: DietState) {
-  return {
-    ...state,
-    checkedItems: Array.from(state.checkedItems),
-  };
-}
-
-function hydrateState(raw: any, fallback: DietState): DietState {
-  const merged = { ...fallback, ...raw };
-  return {
-    ...merged,
-    checkedItems: new Set(raw?.checkedItems ?? []),
-    meals: raw?.meals ?? fallback.meals,
-    dailyHistory: raw?.dailyHistory ?? [],
-    lastResetDate: raw?.lastResetDate ?? getTodayStr(),
-  };
-}
-
-function performDailyReset(prev: DietState): DietState {
-  const today = getTodayStr();
-  if (prev.lastResetDate === today) return prev;
-
-  // Save yesterday's data to history
-  const log: DailyLog = {
-    date: prev.lastResetDate,
-    caloriesConsumed: prev.caloriesConsumed,
-    checkedItems: Array.from(prev.checkedItems),
-    waterCups: prev.waterCups,
-    totalScore: prev.totalScore,
-  };
-
-  const dailyHistory = [...prev.dailyHistory, log].slice(-90); // keep 90 days
-
-  return {
-    ...prev,
-    caloriesConsumed: 0,
-    checkedItems: new Set<string>(),
-    waterCups: 0,
-    totalScore: 0,
-    lastResetDate: today,
-    dailyHistory,
-    // Keep: currentWeight, targetWeight, startWeight, targetCalories, weightHistory, meals, streak, successDays, bestStreak
-  };
-}
-
 export function useDietAppState() {
+  const { user } = useAuth();
+  const userId = user?.id;
+
   const initial: DietState = useMemo(
     () => ({
-      currentWeight: 98,
-      targetWeight: 85,
-      startWeight: 98,
+      currentWeight: 80,
+      targetWeight: 70,
+      startWeight: 80,
       caloriesConsumed: 0,
       targetCalories: 1750,
       checkedItems: new Set<string>(),
@@ -137,14 +95,7 @@ export function useDietAppState() {
       successDays: 0,
       bestStreak: 0,
       totalScore: 0,
-      weightHistory: [
-        { date: "10/01", weight: 98 },
-        { date: "17/01", weight: 97.4 },
-        { date: "24/01", weight: 96.2 },
-        { date: "31/01", weight: 95.5 },
-        { date: "07/02", weight: 94.8 },
-        { date: "10/02", weight: 94.2 },
-      ],
+      weightHistory: [],
       meals: DEFAULT_MEALS,
       lastResetDate: getTodayStr(),
       dailyHistory: [],
@@ -153,27 +104,237 @@ export function useDietAppState() {
   );
 
   const [state, setState] = useState<DietState>(initial);
+  const [loaded, setLoaded] = useState(false);
+  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Load and check for daily reset
+  // ─── Load from cloud ───
   useEffect(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (!saved) return;
-    try {
-      const raw = JSON.parse(saved);
-      const hydrated = hydrateState(raw, initial);
-      const afterReset = performDailyReset(hydrated);
-      setState(afterReset);
-    } catch (e) {
-      console.error("Failed to load state", e);
-    }
-  }, []);
+    if (!userId) return;
 
-  // Check for midnight reset periodically
+    const load = async () => {
+      try {
+        // Load settings
+        const { data: settings } = await supabase
+          .from("user_settings")
+          .select("*")
+          .eq("user_id", userId)
+          .maybeSingle();
+
+        // Load today's log
+        const today = getTodayStr();
+        const { data: todayLog } = await supabase
+          .from("daily_logs")
+          .select("*")
+          .eq("user_id", userId)
+          .eq("log_date", today)
+          .maybeSingle();
+
+        // Load history (last 90 days, excluding today)
+        const { data: historyLogs } = await supabase
+          .from("daily_logs")
+          .select("*")
+          .eq("user_id", userId)
+          .neq("log_date", today)
+          .order("log_date", { ascending: true })
+          .limit(90);
+
+        const dailyHistory: DailyLog[] = (historyLogs || []).map((l: any) => ({
+          date: l.log_date,
+          caloriesConsumed: l.calories_consumed,
+          checkedItems: l.checked_items || [],
+          waterCups: l.water_cups,
+          totalScore: l.total_score,
+        }));
+
+        // Also check localStorage for migration
+        const STORAGE_KEY = "dietAppState_v1";
+        const localRaw = localStorage.getItem(STORAGE_KEY);
+        let localData: any = null;
+        if (localRaw) {
+          try { localData = JSON.parse(localRaw); } catch {}
+        }
+
+        if (settings) {
+          // Cloud data exists
+          const meals = (settings.meals as any[])?.length > 0 ? settings.meals as unknown as MealGroup[] : DEFAULT_MEALS;
+          const weightHistory = (settings.weight_history as any[]) || [];
+
+          setState({
+            currentWeight: Number(settings.current_weight),
+            targetWeight: Number(settings.target_weight),
+            startWeight: Number(settings.start_weight),
+            targetCalories: settings.target_calories,
+            streak: settings.streak,
+            successDays: settings.success_days,
+            bestStreak: settings.best_streak,
+            meals,
+            weightHistory: weightHistory as WeightPoint[],
+            caloriesConsumed: todayLog?.calories_consumed ?? 0,
+            checkedItems: new Set(todayLog?.checked_items ?? []),
+            waterCups: todayLog?.water_cups ?? 0,
+            totalScore: todayLog?.total_score ?? 0,
+            lastResetDate: today,
+            dailyHistory,
+          });
+        } else if (localData) {
+          // Migrate from localStorage
+          const migrated: DietState = {
+            currentWeight: localData.currentWeight ?? initial.currentWeight,
+            targetWeight: localData.targetWeight ?? initial.targetWeight,
+            startWeight: localData.startWeight ?? initial.startWeight,
+            targetCalories: localData.targetCalories ?? initial.targetCalories,
+            streak: localData.streak ?? 0,
+            successDays: localData.successDays ?? 0,
+            bestStreak: localData.bestStreak ?? 0,
+            meals: localData.meals ?? DEFAULT_MEALS,
+            weightHistory: localData.weightHistory ?? [],
+            caloriesConsumed: localData.caloriesConsumed ?? 0,
+            checkedItems: new Set(localData.checkedItems ?? []),
+            waterCups: localData.waterCups ?? 0,
+            totalScore: localData.totalScore ?? 0,
+            lastResetDate: localData.lastResetDate ?? today,
+            dailyHistory: localData.dailyHistory ?? [],
+          };
+
+          setState(migrated);
+
+          // Save to cloud
+          await supabase.from("user_settings").upsert({
+            user_id: userId,
+            target_calories: migrated.targetCalories,
+            current_weight: migrated.currentWeight,
+            start_weight: migrated.startWeight,
+            target_weight: migrated.targetWeight,
+            streak: migrated.streak,
+            success_days: migrated.successDays,
+            best_streak: migrated.bestStreak,
+            meals: migrated.meals as any,
+            weight_history: migrated.weightHistory as any,
+          }, { onConflict: "user_id" });
+
+          // Save today's log
+          await supabase.from("daily_logs").upsert({
+            user_id: userId,
+            log_date: today,
+            calories_consumed: migrated.caloriesConsumed,
+            checked_items: Array.from(migrated.checkedItems),
+            water_cups: migrated.waterCups,
+            total_score: migrated.totalScore,
+          }, { onConflict: "user_id,log_date" });
+
+          // Migrate history
+          if (migrated.dailyHistory.length > 0) {
+            const historyRows = migrated.dailyHistory.map((log) => ({
+              user_id: userId,
+              log_date: log.date,
+              calories_consumed: log.caloriesConsumed,
+              checked_items: log.checkedItems,
+              water_cups: log.waterCups,
+              total_score: log.totalScore,
+            }));
+            await supabase.from("daily_logs").upsert(historyRows, { onConflict: "user_id,log_date" });
+          }
+
+          // Clear localStorage after migration
+          localStorage.removeItem(STORAGE_KEY);
+        } else {
+          // No data anywhere - create defaults
+          setState(initial);
+          await supabase.from("user_settings").upsert({
+            user_id: userId,
+            target_calories: initial.targetCalories,
+            current_weight: initial.currentWeight,
+            start_weight: initial.startWeight,
+            target_weight: initial.targetWeight,
+            meals: initial.meals as any,
+            weight_history: initial.weightHistory as any,
+          }, { onConflict: "user_id" });
+        }
+
+        setLoaded(true);
+      } catch (e) {
+        console.error("Failed to load cloud state", e);
+        setLoaded(true);
+      }
+    };
+
+    load();
+  }, [userId]);
+
+  // ─── Debounced save to cloud ───
+  const saveToCloud = useCallback(
+    (newState: DietState) => {
+      if (!userId || !loaded) return;
+
+      if (saveTimer.current) clearTimeout(saveTimer.current);
+      saveTimer.current = setTimeout(async () => {
+        try {
+          const today = getTodayStr();
+
+          // Save settings
+          await supabase.from("user_settings").upsert({
+            user_id: userId,
+            target_calories: newState.targetCalories,
+            current_weight: newState.currentWeight,
+            start_weight: newState.startWeight,
+            target_weight: newState.targetWeight,
+            streak: newState.streak,
+            success_days: newState.successDays,
+            best_streak: newState.bestStreak,
+            meals: newState.meals as any,
+            weight_history: newState.weightHistory as any,
+          }, { onConflict: "user_id" });
+
+          // Save today's log
+          await supabase.from("daily_logs").upsert({
+            user_id: userId,
+            log_date: today,
+            calories_consumed: newState.caloriesConsumed,
+            checked_items: Array.from(newState.checkedItems),
+            water_cups: newState.waterCups,
+            total_score: newState.totalScore,
+          }, { onConflict: "user_id,log_date" });
+        } catch (e) {
+          console.error("Failed to save to cloud", e);
+        }
+      }, 800);
+    },
+    [userId, loaded]
+  );
+
+  // Save whenever state changes
+  useEffect(() => {
+    if (loaded) saveToCloud(state);
+  }, [state, loaded, saveToCloud]);
+
+  // Midnight reset check
   useEffect(() => {
     const check = () => {
-      setState((prev) => performDailyReset(prev));
+      const today = getTodayStr();
+      setState((prev) => {
+        if (prev.lastResetDate === today) return prev;
+
+        // Archive previous day
+        const log: DailyLog = {
+          date: prev.lastResetDate,
+          caloriesConsumed: prev.caloriesConsumed,
+          checkedItems: Array.from(prev.checkedItems),
+          waterCups: prev.waterCups,
+          totalScore: prev.totalScore,
+        };
+
+        return {
+          ...prev,
+          caloriesConsumed: 0,
+          checkedItems: new Set<string>(),
+          waterCups: 0,
+          totalScore: 0,
+          lastResetDate: today,
+          dailyHistory: [...prev.dailyHistory, log].slice(-90),
+        };
+      });
     };
-    // Calculate ms until next midnight
+
     const now = new Date();
     const midnight = new Date(now);
     midnight.setHours(24, 0, 0, 0);
@@ -181,21 +342,12 @@ export function useDietAppState() {
 
     const timeout = setTimeout(() => {
       check();
-      // Then check every minute
       const interval = setInterval(check, 60_000);
       return () => clearInterval(interval);
     }, msUntilMidnight);
 
     return () => clearTimeout(timeout);
   }, []);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(serializeState(state)));
-    } catch (e) {
-      console.error("Failed to save state", e);
-    }
-  }, [state]);
 
   const computed = useMemo(() => {
     const weightLost = state.startWeight - state.currentWeight;
@@ -265,7 +417,10 @@ export function useDietAppState() {
     const payload = {
       version: "1.0",
       exportDate: new Date().toISOString(),
-      state: serializeState(state),
+      state: {
+        ...state,
+        checkedItems: Array.from(state.checkedItems),
+      },
     };
     return JSON.stringify(payload, null, 2);
   }
@@ -273,17 +428,28 @@ export function useDietAppState() {
   function importJson(text: string) {
     const raw = JSON.parse(text);
     if (!raw?.state || !raw?.version) throw new Error("Invalid backup file");
-    setState((prev) => hydrateState(raw.state, prev));
+    const s = raw.state;
+    setState((prev) => ({
+      ...prev,
+      ...s,
+      checkedItems: new Set(s.checkedItems ?? []),
+      meals: s.meals ?? prev.meals,
+    }));
   }
 
-  function resetAll() {
-    localStorage.removeItem(STORAGE_KEY);
+  async function resetAll() {
     setState(initial);
+    if (userId) {
+      await supabase.from("daily_logs").delete().eq("user_id", userId);
+      await supabase.from("user_settings").delete().eq("user_id", userId);
+    }
+    localStorage.removeItem("dietAppState_v1");
   }
 
   return {
     state,
     computed,
+    loaded,
     actions: {
       toggleChecklistItem,
       setWaterCups,
