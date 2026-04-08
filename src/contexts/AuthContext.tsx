@@ -124,6 +124,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setProfile(null);
   };
 
+  // Navigate to /auth after sign-out (user/session cleared triggers AuthRoute)
+
   return (
     <AuthContext.Provider value={{ user, session, profile, loading, signOut, refreshProfile }}>
       {children}
