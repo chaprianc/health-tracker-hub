@@ -414,12 +414,25 @@ export function useDietAppState() {
       const nextHistory = [...prev.weightHistory, { date: dateStr, weight: newWeight }].slice(-8);
       let score = prev.totalScore;
       if (newWeight < old) score += 50;
-      return {
+      const newState = {
         ...prev,
         currentWeight: newWeight,
         totalScore: score,
         weightHistory: nextHistory,
       };
+
+      // Immediately persist weight to cloud to prevent loss on reload
+      if (userId) {
+        supabase.from("user_settings").upsert({
+          user_id: userId,
+          current_weight: newWeight,
+          weight_history: nextHistory as any,
+        }, { onConflict: "user_id" }).then(({ error }) => {
+          if (error) console.error("Failed to save weight update", error);
+        });
+      }
+
+      return newState;
     });
   }
 
