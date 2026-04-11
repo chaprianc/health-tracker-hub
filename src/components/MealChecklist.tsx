@@ -49,6 +49,7 @@ export function MealChecklist({ title, time, items, checkedItems, onToggle, onEd
         {items.map((item) => {
           const checked = checkedItems.has(item.id);
           const hasMacros = (item.protein || item.carbs || item.fat);
+          const warnings = getFoodWarnings(item.label, healthConditions);
           return (
             <button
               key={item.id}
