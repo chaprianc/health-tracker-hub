@@ -7,6 +7,7 @@ import { toast } from "@/hooks/use-toast";
 interface EditMealDialogProps {
   meal: MealGroup;
   mealIndex: number;
+  allMeals?: MealGroup[];
   open: boolean;
   onClose: () => void;
   onSave: (index: number, updated: MealGroup) => void;
