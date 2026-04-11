@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { Apple, ChevronLeft, ChevronRight } from "lucide-react";
+import { Apple, ChevronLeft, ChevronRight, AlertTriangle } from "lucide-react";
 import { calcRecommendedCalories, generatePersonalizedMeals } from "@/lib/dietCalculations";
 import type { MealGroup } from "@/hooks/useDietAppState";
 
@@ -15,9 +15,32 @@ type OnboardingData = {
   is_vegetarian: boolean;
   target_weight: string;
   activity_level: string;
+  health_conditions: string[];
+  medications: string[];
 };
 
-const STEPS = ["פרטים אישיים", "מטרות", "העדפות"];
+const STEPS = ["פרטים אישיים", "מטרות", "בריאות", "העדפות"];
+
+const HEALTH_CONDITIONS = [
+  { value: "diabetes", label: "סוכרת", emoji: "💉", warning: "יש להימנע ממזונות עתירי סוכר ופחמימות פשוטות" },
+  { value: "high_blood_pressure", label: "לחץ דם גבוה", emoji: "❤️", warning: "יש להגביל צריכת מלח ומזונות מעובדים" },
+  { value: "high_cholesterol", label: "כולסטרול גבוה", emoji: "🫀", warning: "יש להימנע משומנים רווּיים ומזון מטוגן" },
+  { value: "celiac", label: "צליאק", emoji: "🌾", warning: "יש להימנע ממזונות המכילים גלוטן" },
+  { value: "heart_disease", label: "מחלות לב", emoji: "💔", warning: "יש להקפיד על תזונה דלת שומן ומלח" },
+  { value: "kidney_disease", label: "מחלות כליות", emoji: "🫘", warning: "יש להגביל חלבון, אשלגן ומלח" },
+  { value: "thyroid", label: "בלוטת תריס", emoji: "🦋", warning: "יש להתאים תזונה בהתאם לסוג הבעיה" },
+  { value: "anemia", label: "אנמיה", emoji: "🩸", warning: "יש להקפיד על מזונות עשירים בברזל" },
+];
+
+const COMMON_MEDICATIONS = [
+  { value: "diabetes_meds", label: "תרופות לסוכרת", emoji: "💊" },
+  { value: "blood_pressure_meds", label: "תרופות ללחץ דם", emoji: "💊" },
+  { value: "cholesterol_meds", label: "תרופות לכולסטרול", emoji: "💊" },
+  { value: "blood_thinners", label: "מדללי דם", emoji: "💊" },
+  { value: "thyroid_meds", label: "תרופות לבלוטת תריס", emoji: "💊" },
+  { value: "iron_supplements", label: "תוספי ברזל", emoji: "💊" },
+  { value: "insulin", label: "אינסולין", emoji: "💉" },
+];
 
 const Onboarding = () => {
   const navigate = useNavigate();
@@ -33,14 +56,26 @@ const Onboarding = () => {
     is_vegetarian: false,
     target_weight: "",
     activity_level: "moderate",
+    health_conditions: [],
+    medications: [],
   });
 
   const update = (field: keyof OnboardingData, value: any) =>
     setData((prev) => ({ ...prev, [field]: value }));
 
+  const toggleArrayItem = (field: "health_conditions" | "medications", value: string) => {
+    setData((prev) => ({
+      ...prev,
+      [field]: prev[field].includes(value)
+        ? prev[field].filter((v) => v !== value)
+        : [...prev[field], value],
+    }));
+  };
+
   const canNext = () => {
     if (step === 0) return data.age && data.height && data.weight && data.gender;
     if (step === 1) return data.target_weight && data.activity_level;
+    // Step 2 (health) and step 3 (preferences) are always valid (optional)
     return true;
   };
 
@@ -71,13 +106,14 @@ const Onboarding = () => {
           is_vegetarian: data.is_vegetarian,
           target_weight: parseFloat(data.target_weight),
           activity_level: data.activity_level,
+          health_conditions: data.health_conditions,
+          medications: data.medications,
           onboarding_completed: true,
         })
         .eq("id", user.id);
 
       if (error) throw error;
 
-      // Save personalized meals & calorie target to cloud
       const meals: MealGroup[] = generatePersonalizedMeals(profileData, recommendedCalories);
       await supabase.from("user_settings").upsert({
         user_id: user.id,
@@ -89,7 +125,6 @@ const Onboarding = () => {
         weight_history: [] as any,
       }, { onConflict: "user_id" });
 
-      // Clean up old localStorage if exists
       localStorage.removeItem("dietAppState_v1");
 
       await refreshProfile();
@@ -101,6 +136,8 @@ const Onboarding = () => {
       setLoading(false);
     }
   };
+
+  const activeWarnings = HEALTH_CONDITIONS.filter((c) => data.health_conditions.includes(c.value));
 
   return (
     <div dir="rtl" className="flex min-h-screen items-center justify-center bg-background px-4">
@@ -118,20 +155,14 @@ const Onboarding = () => {
         <div className="flex items-center gap-2">
           {STEPS.map((s, i) => (
             <div key={s} className="flex flex-1 flex-col items-center gap-1">
-              <div
-                className={`h-2 w-full rounded-full transition-colors ${
-                  i <= step ? "bg-primary" : "bg-muted"
-                }`}
-              />
-              <span className={`text-xs ${i <= step ? "text-primary font-medium" : "text-muted-foreground"}`}>
-                {s}
-              </span>
+              <div className={`h-2 w-full rounded-full transition-colors ${i <= step ? "bg-primary" : "bg-muted"}`} />
+              <span className={`text-xs ${i <= step ? "text-primary font-medium" : "text-muted-foreground"}`}>{s}</span>
             </div>
           ))}
         </div>
 
         {/* Form card */}
-        <div className="rounded-2xl border border-border bg-card p-6 shadow-sm space-y-5">
+        <div className="rounded-2xl border border-border bg-card p-6 shadow-sm space-y-5 max-h-[60vh] overflow-y-auto">
           {step === 0 && (
             <>
               <div className="grid grid-cols-2 gap-4">
@@ -245,6 +276,70 @@ const Onboarding = () => {
           {step === 2 && (
             <>
               <div>
+                <label className="mb-2 block text-sm font-medium text-card-foreground">
+                  האם יש לך מחלות ידועות? <span className="text-xs text-muted-foreground">(ניתן לדלג)</span>
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  {HEALTH_CONDITIONS.map((cond) => (
+                    <button
+                      key={cond.value}
+                      onClick={() => toggleArrayItem("health_conditions", cond.value)}
+                      className={`flex items-center gap-2 rounded-xl border-2 px-3 py-2.5 text-sm font-medium transition-all text-right ${
+                        data.health_conditions.includes(cond.value)
+                          ? "border-primary bg-primary/10 text-primary"
+                          : "border-border bg-background text-card-foreground hover:border-primary/40"
+                      }`}
+                    >
+                      <span>{cond.emoji}</span>
+                      <span className="truncate">{cond.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-medium text-card-foreground">
+                  האם את/ה לוקח/ת תרופות באופן קבוע? <span className="text-xs text-muted-foreground">(ניתן לדלג)</span>
+                </label>
+                <div className="grid gap-2">
+                  {COMMON_MEDICATIONS.map((med) => (
+                    <button
+                      key={med.value}
+                      onClick={() => toggleArrayItem("medications", med.value)}
+                      className={`flex items-center gap-2 rounded-xl border-2 px-3 py-2.5 text-sm font-medium transition-all text-right ${
+                        data.medications.includes(med.value)
+                          ? "border-primary bg-primary/10 text-primary"
+                          : "border-border bg-background text-card-foreground hover:border-primary/40"
+                      }`}
+                    >
+                      <span>{med.emoji}</span>
+                      <span>{med.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Health warnings preview */}
+              {activeWarnings.length > 0 && (
+                <div className="space-y-2">
+                  <p className="text-sm font-medium text-card-foreground flex items-center gap-1">
+                    <AlertTriangle className="h-4 w-4 text-amber-500" />
+                    המלצות תזונתיות חשובות:
+                  </p>
+                  {activeWarnings.map((w) => (
+                    <div key={w.value} className="rounded-lg border border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950 p-2.5">
+                      <p className="text-xs font-semibold text-amber-700 dark:text-amber-300">{w.emoji} {w.label}</p>
+                      <p className="text-xs text-amber-600 dark:text-amber-400 mt-0.5">{w.warning}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </>
+          )}
+
+          {step === 3 && (
+            <>
+              <div>
                 <label className="mb-2 block text-sm font-medium text-card-foreground">האם את/ה צמחוני/ת?</label>
                 <div className="grid grid-cols-2 gap-3">
                   {[
@@ -277,6 +372,18 @@ const Onboarding = () => {
                   <span>מגדר: {data.gender === "male" ? "גבר" : "אישה"}</span>
                   <span>צמחוני: {data.is_vegetarian ? "כן" : "לא"}</span>
                 </div>
+                {data.health_conditions.length > 0 && (
+                  <div className="text-sm text-muted-foreground">
+                    <span className="font-medium">מחלות: </span>
+                    {data.health_conditions.map((c) => HEALTH_CONDITIONS.find((h) => h.value === c)?.label).filter(Boolean).join(", ")}
+                  </div>
+                )}
+                {data.medications.length > 0 && (
+                  <div className="text-sm text-muted-foreground">
+                    <span className="font-medium">תרופות: </span>
+                    {data.medications.map((m) => COMMON_MEDICATIONS.find((med) => med.value === m)?.label).filter(Boolean).join(", ")}
+                  </div>
+                )}
                 <div className="rounded-lg bg-primary/10 border border-primary/20 p-3 text-center">
                   <p className="text-xs text-muted-foreground">יעד קלוריות יומי מומלץ</p>
                   <p className="text-2xl font-bold text-primary">{recommendedCalories}</p>
@@ -299,11 +406,11 @@ const Onboarding = () => {
             </button>
           )}
           <button
-            onClick={() => (step < 2 ? setStep((s) => s + 1) : handleSubmit())}
+            onClick={() => (step < 3 ? setStep((s) => s + 1) : handleSubmit())}
             disabled={!canNext() || loading}
             className="flex flex-1 items-center justify-center gap-1 rounded-lg bg-primary py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
           >
-            {loading ? "..." : step < 2 ? (
+            {loading ? "..." : step < 3 ? (
               <>
                 הבא
                 <ChevronLeft className="h-4 w-4" />
