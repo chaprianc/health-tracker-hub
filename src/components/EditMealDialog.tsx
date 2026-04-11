@@ -221,11 +221,11 @@ export function EditMealDialog({ meal, mealIndex, allMeals, open, onClose, onSav
     }
     const newItems = selected.map((item) => ({
       id: `photo_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
-      label: item.label,
-      calories: item.calories,
-      protein: item.protein,
-      carbs: item.carbs,
-      fat: item.fat,
+      label: item.quantity !== 1 ? `${item.label} (×${item.quantity})` : item.label,
+      calories: Math.round(item.calories * item.quantity),
+      protein: Math.round(item.protein * item.quantity),
+      carbs: Math.round(item.carbs * item.quantity),
+      fat: Math.round(item.fat * item.quantity),
       emoji: item.emoji,
     }));
 
