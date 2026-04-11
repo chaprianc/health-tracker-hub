@@ -58,9 +58,11 @@ export type Database = {
           created_at: string
           display_name: string | null
           gender: string | null
+          health_conditions: string[] | null
           height: number | null
           id: string
           is_vegetarian: boolean | null
+          medications: string[] | null
           onboarding_completed: boolean | null
           target_weight: number | null
           updated_at: string
@@ -73,9 +75,11 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           gender?: string | null
+          health_conditions?: string[] | null
           height?: number | null
           id: string
           is_vegetarian?: boolean | null
+          medications?: string[] | null
           onboarding_completed?: boolean | null
           target_weight?: number | null
           updated_at?: string
@@ -88,9 +92,11 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           gender?: string | null
+          health_conditions?: string[] | null
           height?: number | null
           id?: string
           is_vegetarian?: boolean | null
+          medications?: string[] | null
           onboarding_completed?: boolean | null
           target_weight?: number | null
           updated_at?: string
