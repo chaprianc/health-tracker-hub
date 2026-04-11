@@ -13,6 +13,7 @@ interface EditMealDialogProps {
   open: boolean;
   onClose: () => void;
   onSave: (index: number, updated: MealGroup) => void;
+  onAddCalories?: (calories: number, itemIds: string[]) => void;
 }
 
 interface FoodSuggestion {
