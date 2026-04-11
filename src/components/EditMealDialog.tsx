@@ -413,12 +413,24 @@ export function EditMealDialog({ meal, mealIndex, allMeals, open, onClose, onSav
                               <div className="text-sm font-medium text-card-foreground truncate">{item.label}</div>
                               <div className="text-xs text-muted-foreground">{item.serving}</div>
                               <div className="flex gap-2 text-[10px] text-muted-foreground mt-0.5">
-                                <span>ח {item.protein}g</span>
-                                <span>פ {item.carbs}g</span>
-                                <span>ש {item.fat}g</span>
+                                <span>ח {Math.round(item.protein * item.quantity)}g</span>
+                                <span>פ {Math.round(item.carbs * item.quantity)}g</span>
+                                <span>ש {Math.round(item.fat * item.quantity)}g</span>
                               </div>
                             </div>
-                            <span className="shrink-0 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">{item.calories} קל׳</span>
+                            {/* Quantity controls */}
+                            <div className="flex items-center gap-1 shrink-0">
+                              <button
+                                onClick={() => updateAnalyzedItem(i, "quantity", Math.max(0.25, (item.quantity || 1) - 0.25))}
+                                className="flex h-6 w-6 items-center justify-center rounded-full border border-border text-xs font-bold text-muted-foreground hover:bg-secondary"
+                              >−</button>
+                              <span className="w-8 text-center text-xs font-semibold text-card-foreground">{item.quantity}</span>
+                              <button
+                                onClick={() => updateAnalyzedItem(i, "quantity", Math.min(10, (item.quantity || 1) + 0.25))}
+                                className="flex h-6 w-6 items-center justify-center rounded-full border border-border text-xs font-bold text-muted-foreground hover:bg-secondary"
+                              >+</button>
+                            </div>
+                            <span className="shrink-0 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">{Math.round(item.calories * item.quantity)} קל׳</span>
                             <button onClick={() => toggleEditAnalyzedItem(i)} className="shrink-0 rounded p-1 text-muted-foreground hover:text-primary">
                               <Pencil className="h-3.5 w-3.5" />
                             </button>
