@@ -247,7 +247,7 @@ export function EditMealDialog({ meal, mealIndex, allMeals, open, onClose, onSav
 
   const totalAnalyzedCalories = analyzedItems
     .filter((item) => item.selected)
-    .reduce((sum, item) => sum + item.calories, 0);
+    .reduce((sum, item) => sum + Math.round(item.calories * item.quantity), 0);
 
   const handleSave = () => {
     const cleaned = items
