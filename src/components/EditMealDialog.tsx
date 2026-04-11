@@ -58,6 +58,7 @@ export function EditMealDialog({ meal, mealIndex, allMeals, open, onClose, onSav
   const [analyzedItems, setAnalyzedItems] = useState<AnalyzedItem[]>([]);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const galleryInputRef = useRef<HTMLInputElement>(null);
   const [targetMealIndex, setTargetMealIndex] = useState<number>(mealIndex);
 
   if (!open) return null;
@@ -312,11 +313,24 @@ export function EditMealDialog({ meal, mealIndex, allMeals, open, onClose, onSav
           {/* Photo Analysis Panel */}
           {showPhotoAnalysis && (
             <div className="mt-2 rounded-lg border border-border bg-secondary/30 p-3 space-y-3">
+              {/* Camera input */}
               <input
                 ref={fileInputRef}
                 type="file"
                 accept="image/*"
                 capture="environment"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) handlePhotoUpload(file);
+                  e.target.value = "";
+                }}
+              />
+              {/* Gallery input (no capture) */}
+              <input
+                ref={galleryInputRef}
+                type="file"
+                accept="image/*"
                 className="hidden"
                 onChange={(e) => {
                   const file = e.target.files?.[0];
@@ -337,7 +351,14 @@ export function EditMealDialog({ meal, mealIndex, allMeals, open, onClose, onSav
                       className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
                     >
                       <Camera className="h-4 w-4" />
-                      צלם / בחר תמונה
+                      צלם תמונה
+                    </button>
+                    <button
+                      onClick={() => galleryInputRef.current?.click()}
+                      className="flex items-center gap-2 rounded-lg border border-primary bg-background px-4 py-2 text-sm font-medium text-primary hover:bg-primary/10"
+                    >
+                      <ImageIcon className="h-4 w-4" />
+                      בחר מגלריה
                     </button>
                   </div>
                 </div>
