@@ -213,6 +213,7 @@ const Index = () => {
           <EditMealDialog
             meal={state.meals[editingMeal]}
             mealIndex={editingMeal}
+            allMeals={state.meals}
             open={true}
             onClose={() => setEditingMeal(null)}
             onSave={handleSaveMeal}

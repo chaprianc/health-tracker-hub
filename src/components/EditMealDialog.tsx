@@ -7,6 +7,7 @@ import { toast } from "@/hooks/use-toast";
 interface EditMealDialogProps {
   meal: MealGroup;
   mealIndex: number;
+  allMeals?: MealGroup[];
   open: boolean;
   onClose: () => void;
   onSave: (index: number, updated: MealGroup) => void;
@@ -36,7 +37,7 @@ interface AnalyzedItem {
 
 const EMOJI_OPTIONS = ["🥚", "🍞", "🥒", "🧀", "🍗", "🍚", "🥗", "🥄", "🐟", "🥦", "🌾", "🍎", "🥛", "🥜", "🥩", "🍕", "🥑", "🍌", "🫘", "🥣"];
 
-export function EditMealDialog({ meal, mealIndex, open, onClose, onSave }: EditMealDialogProps) {
+export function EditMealDialog({ meal, mealIndex, allMeals, open, onClose, onSave }: EditMealDialogProps) {
   const [items, setItems] = useState<MealItem[]>(() => meal.items.map((i) => ({ ...i })));
   const [title, setTitle] = useState(meal.title);
   const [loadingIdx, setLoadingIdx] = useState<number | null>(null);
@@ -52,6 +53,7 @@ export function EditMealDialog({ meal, mealIndex, open, onClose, onSave }: EditM
   const [analyzedItems, setAnalyzedItems] = useState<AnalyzedItem[]>([]);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [targetMealIndex, setTargetMealIndex] = useState<number>(mealIndex);
 
   if (!open) return null;
 
@@ -225,12 +227,26 @@ export function EditMealDialog({ meal, mealIndex, open, onClose, onSave }: EditM
       fat: item.fat,
       emoji: item.emoji,
     }));
-    setItems((prev) => [...prev, ...newItems]);
-    toast({ title: `נוספו ${selected.length} פריטים מהתמונה ✅` });
+
+    if (targetMealIndex === mealIndex) {
+      // Add to current meal
+      setItems((prev) => [...prev, ...newItems]);
+    } else if (allMeals) {
+      // Save to a different meal
+      const targetMeal = allMeals[targetMealIndex];
+      onSave(targetMealIndex, { ...targetMeal, items: [...targetMeal.items, ...newItems] });
+    }
+
+    const targetName = allMeals?.[targetMealIndex]?.title || meal.title;
+    toast({ title: `נוספו ${selected.length} פריטים ל${targetName} ✅` });
     setShowPhotoAnalysis(false);
     setAnalyzedItems([]);
     setPhotoPreview(null);
   };
+
+  const totalAnalyzedCalories = analyzedItems
+    .filter((item) => item.selected)
+    .reduce((sum, item) => sum + item.calories, 0);
 
   const handleSave = () => {
     const cleaned = items
@@ -410,6 +426,30 @@ export function EditMealDialog({ meal, mealIndex, open, onClose, onSave }: EditM
                       </div>
                     ))}
                   </div>
+                  {/* Total calories summary */}
+                  <div className="rounded-lg bg-primary/10 p-3 flex items-center justify-between">
+                    <div>
+                      <span className="text-sm font-bold text-primary">סה״כ קלוריות: {totalAnalyzedCalories}</span>
+                      <span className="text-xs text-muted-foreground mr-2">({analyzedItems.filter(i => i.selected).length} פריטים)</span>
+                    </div>
+                  </div>
+
+                  {/* Meal selector */}
+                  {allMeals && allMeals.length > 1 && (
+                    <div className="flex items-center gap-2">
+                      <label className="text-sm text-muted-foreground whitespace-nowrap">הוסף לארוחה:</label>
+                      <select
+                        value={targetMealIndex}
+                        onChange={(e) => setTargetMealIndex(Number(e.target.value))}
+                        className="flex-1 rounded-lg border border-input bg-background px-2 py-1.5 text-sm outline-none focus:ring-2 focus:ring-ring"
+                      >
+                        {allMeals.map((m, i) => (
+                          <option key={i} value={i}>{m.title}</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+
                   <button
                     onClick={addAnalyzedItemsToMeal}
                     className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
