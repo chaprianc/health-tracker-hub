@@ -58,6 +58,7 @@ export function EditMealDialog({ meal, mealIndex, allMeals, open, onClose, onSav
   const [analyzedItems, setAnalyzedItems] = useState<AnalyzedItem[]>([]);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const galleryInputRef = useRef<HTMLInputElement>(null);
   const [targetMealIndex, setTargetMealIndex] = useState<number>(mealIndex);
 
   if (!open) return null;
