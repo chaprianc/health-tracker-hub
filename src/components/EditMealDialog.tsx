@@ -1,8 +1,10 @@
 import { useState, useRef } from "react";
-import { X, Plus, Trash2, Sparkles, Loader2, Search, Camera, ImageIcon, Pencil, Check } from "lucide-react";
+import { X, Plus, Trash2, Sparkles, Loader2, Search, Camera, ImageIcon, Pencil, Check, AlertTriangle } from "lucide-react";
 import type { MealItem, MealGroup } from "@/hooks/useDietAppState";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
+import { getFoodWarnings } from "@/lib/healthWarnings";
 
 interface EditMealDialogProps {
   meal: MealGroup;
