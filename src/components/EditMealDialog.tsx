@@ -236,16 +236,21 @@ export function EditMealDialog({ meal, mealIndex, allMeals, open, onClose, onSav
     }));
 
     if (targetMealIndex === mealIndex) {
-      // Add to current meal
       setItems((prev) => [...prev, ...newItems]);
     } else if (allMeals) {
-      // Save to a different meal
       const targetMeal = allMeals[targetMealIndex];
       onSave(targetMealIndex, { ...targetMeal, items: [...targetMeal.items, ...newItems] });
     }
 
+    // Auto-add calories to daily total and mark items as checked
+    const totalCals = newItems.reduce((sum, item) => sum + item.calories, 0);
+    const itemIds = newItems.map((item) => item.id);
+    if (onAddCalories) {
+      onAddCalories(totalCals, itemIds);
+    }
+
     const targetName = allMeals?.[targetMealIndex]?.title || meal.title;
-    toast({ title: `נוספו ${selected.length} פריטים ל${targetName} ✅` });
+    toast({ title: `נוספו ${selected.length} פריטים ל${targetName} (${totalCals} קל׳) ✅` });
     setShowPhotoAnalysis(false);
     setAnalyzedItems([]);
     setPhotoPreview(null);
