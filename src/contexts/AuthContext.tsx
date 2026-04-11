@@ -7,6 +7,8 @@ type Profile = {
   display_name: string | null;
   avatar_url: string | null;
   onboarding_completed: boolean | null;
+  health_conditions: string[] | null;
+  medications: string[] | null;
 };
 
 type AuthContextType = {
