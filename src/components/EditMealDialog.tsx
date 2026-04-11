@@ -585,6 +585,16 @@ export function EditMealDialog({ meal, mealIndex, allMeals, open, onClose, onSav
                   <span>שומן: {item.fat || 0}g</span>
                 </div>
               ) : null}
+              {/* Health warning */}
+              {(() => {
+                const w = getFoodWarnings(item.label, healthConditions);
+                return w.length > 0 ? (
+                  <div className="flex items-center gap-1 px-2 text-[11px] text-amber-600 dark:text-amber-400">
+                    <AlertTriangle className="h-3 w-3 shrink-0" />
+                    {w[0]}
+                  </div>
+                ) : null;
+              })()}
             </div>
           ))}
         </div>
