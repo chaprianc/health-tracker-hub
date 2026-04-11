@@ -1,4 +1,6 @@
-import { CheckCircle2, Circle, Clock, Pencil } from "lucide-react";
+import { CheckCircle2, Circle, Clock, Pencil, AlertTriangle } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { getFoodWarnings } from "@/lib/healthWarnings";
 
 export interface ChecklistItemData {
   id: string;
@@ -20,6 +22,8 @@ interface MealChecklistProps {
 }
 
 export function MealChecklist({ title, time, items, checkedItems, onToggle, onEdit }: MealChecklistProps) {
+  const { profile } = useAuth();
+  const healthConditions = profile?.health_conditions || [];
   return (
     <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
       <div className="mb-3 flex items-center justify-between">
