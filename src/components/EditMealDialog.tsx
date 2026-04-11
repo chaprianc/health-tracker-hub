@@ -426,6 +426,30 @@ export function EditMealDialog({ meal, mealIndex, allMeals, open, onClose, onSav
                       </div>
                     ))}
                   </div>
+                  {/* Total calories summary */}
+                  <div className="rounded-lg bg-primary/10 p-3 flex items-center justify-between">
+                    <div>
+                      <span className="text-sm font-bold text-primary">סה״כ קלוריות: {totalAnalyzedCalories}</span>
+                      <span className="text-xs text-muted-foreground mr-2">({analyzedItems.filter(i => i.selected).length} פריטים)</span>
+                    </div>
+                  </div>
+
+                  {/* Meal selector */}
+                  {allMeals && allMeals.length > 1 && (
+                    <div className="flex items-center gap-2">
+                      <label className="text-sm text-muted-foreground whitespace-nowrap">הוסף לארוחה:</label>
+                      <select
+                        value={targetMealIndex}
+                        onChange={(e) => setTargetMealIndex(Number(e.target.value))}
+                        className="flex-1 rounded-lg border border-input bg-background px-2 py-1.5 text-sm outline-none focus:ring-2 focus:ring-ring"
+                      >
+                        {allMeals.map((m, i) => (
+                          <option key={i} value={i}>{m.title}</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+
                   <button
                     onClick={addAnalyzedItemsToMeal}
                     className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
