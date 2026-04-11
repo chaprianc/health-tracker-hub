@@ -421,6 +421,15 @@ export function EditMealDialog({ meal, mealIndex, allMeals, open, onClose, onSav
                                 <span>פ {Math.round(item.carbs * item.quantity)}g</span>
                                 <span>ש {Math.round(item.fat * item.quantity)}g</span>
                               </div>
+                              {(() => {
+                                const w = getFoodWarnings(item.label, healthConditions);
+                                return w.length > 0 ? (
+                                  <div className="flex items-center gap-1 text-[10px] text-amber-600 dark:text-amber-400 mt-0.5">
+                                    <AlertTriangle className="h-3 w-3 shrink-0" />
+                                    {w[0]}
+                                  </div>
+                                ) : null;
+                              })()}
                             </div>
                             {/* Quantity controls */}
                             <div className="flex items-center gap-1 shrink-0">
