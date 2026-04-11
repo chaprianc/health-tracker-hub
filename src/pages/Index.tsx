@@ -217,6 +217,18 @@ const Index = () => {
             open={true}
             onClose={() => setEditingMeal(null)}
             onSave={handleSaveMeal}
+            onAddCalories={(calories, itemIds) => {
+              actions.setState((prev) => {
+                const newChecked = new Set(prev.checkedItems);
+                itemIds.forEach((id) => newChecked.add(id));
+                return {
+                  ...prev,
+                  caloriesConsumed: prev.caloriesConsumed + calories,
+                  checkedItems: newChecked,
+                  totalScore: prev.totalScore + (itemIds.length * 10),
+                };
+              });
+            }}
           />
         )}
 
