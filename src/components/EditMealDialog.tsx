@@ -186,7 +186,7 @@ export function EditMealDialog({ meal, mealIndex, allMeals, open, onClose, onSav
         }
 
         if (data?.items?.length > 0) {
-          setAnalyzedItems(data.items.map((item: any) => ({ ...item, selected: true, editing: false })));
+          setAnalyzedItems(data.items.map((item: any) => ({ ...item, selected: true, editing: false, quantity: 1 })));
           toast({ title: `זוהו ${data.items.length} פריטי מזון! 📸` });
         } else {
           toast({ title: "לא זוהו פריטי מזון בתמונה", variant: "destructive" });
