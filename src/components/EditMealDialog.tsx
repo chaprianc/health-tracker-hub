@@ -41,6 +41,8 @@ interface AnalyzedItem {
 const EMOJI_OPTIONS = ["🥚", "🍞", "🥒", "🧀", "🍗", "🍚", "🥗", "🥄", "🐟", "🥦", "🌾", "🍎", "🥛", "🥜", "🥩", "🍕", "🥑", "🍌", "🫘", "🥣"];
 
 export function EditMealDialog({ meal, mealIndex, allMeals, open, onClose, onSave }: EditMealDialogProps) {
+  const { profile } = useAuth();
+  const healthConditions = profile?.health_conditions || [];
   const [items, setItems] = useState<MealItem[]>(() => meal.items.map((i) => ({ ...i })));
   const [title, setTitle] = useState(meal.title);
   const [loadingIdx, setLoadingIdx] = useState<number | null>(null);
