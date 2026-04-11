@@ -7,6 +7,8 @@ type Profile = {
   display_name: string | null;
   avatar_url: string | null;
   onboarding_completed: boolean | null;
+  health_conditions: string[] | null;
+  medications: string[] | null;
 };
 
 type AuthContextType = {
@@ -38,7 +40,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const fetchProfile = useCallback(async (userId: string) => {
     const { data, error } = await supabase
       .from("profiles")
-      .select("id, display_name, avatar_url, onboarding_completed")
+      .select("id, display_name, avatar_url, onboarding_completed, health_conditions, medications")
       .eq("id", userId)
       .maybeSingle();
 

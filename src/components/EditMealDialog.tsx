@@ -1,8 +1,10 @@
 import { useState, useRef } from "react";
-import { X, Plus, Trash2, Sparkles, Loader2, Search, Camera, ImageIcon, Pencil, Check } from "lucide-react";
+import { X, Plus, Trash2, Sparkles, Loader2, Search, Camera, ImageIcon, Pencil, Check, AlertTriangle } from "lucide-react";
 import type { MealItem, MealGroup } from "@/hooks/useDietAppState";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
+import { getFoodWarnings } from "@/lib/healthWarnings";
 
 interface EditMealDialogProps {
   meal: MealGroup;
@@ -39,6 +41,8 @@ interface AnalyzedItem {
 const EMOJI_OPTIONS = ["🥚", "🍞", "🥒", "🧀", "🍗", "🍚", "🥗", "🥄", "🐟", "🥦", "🌾", "🍎", "🥛", "🥜", "🥩", "🍕", "🥑", "🍌", "🫘", "🥣"];
 
 export function EditMealDialog({ meal, mealIndex, allMeals, open, onClose, onSave }: EditMealDialogProps) {
+  const { profile } = useAuth();
+  const healthConditions = profile?.health_conditions || [];
   const [items, setItems] = useState<MealItem[]>(() => meal.items.map((i) => ({ ...i })));
   const [title, setTitle] = useState(meal.title);
   const [loadingIdx, setLoadingIdx] = useState<number | null>(null);
@@ -417,6 +421,15 @@ export function EditMealDialog({ meal, mealIndex, allMeals, open, onClose, onSav
                                 <span>פ {Math.round(item.carbs * item.quantity)}g</span>
                                 <span>ש {Math.round(item.fat * item.quantity)}g</span>
                               </div>
+                              {(() => {
+                                const w = getFoodWarnings(item.label, healthConditions);
+                                return w.length > 0 ? (
+                                  <div className="flex items-center gap-1 text-[10px] text-amber-600 dark:text-amber-400 mt-0.5">
+                                    <AlertTriangle className="h-3 w-3 shrink-0" />
+                                    {w[0]}
+                                  </div>
+                                ) : null;
+                              })()}
                             </div>
                             {/* Quantity controls */}
                             <div className="flex items-center gap-1 shrink-0">
@@ -581,6 +594,16 @@ export function EditMealDialog({ meal, mealIndex, allMeals, open, onClose, onSav
                   <span>שומן: {item.fat || 0}g</span>
                 </div>
               ) : null}
+              {/* Health warning */}
+              {(() => {
+                const w = getFoodWarnings(item.label, healthConditions);
+                return w.length > 0 ? (
+                  <div className="flex items-center gap-1 px-2 text-[11px] text-amber-600 dark:text-amber-400">
+                    <AlertTriangle className="h-3 w-3 shrink-0" />
+                    {w[0]}
+                  </div>
+                ) : null;
+              })()}
             </div>
           ))}
         </div>
