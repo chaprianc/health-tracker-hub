@@ -167,10 +167,20 @@ export function useDietAppState() {
           const meals = (settings.meals as any[])?.length > 0 ? settings.meals as unknown as MealGroup[] : DEFAULT_MEALS;
           const weightHistory = (settings.weight_history as any[]) || [];
 
+          // Sync currentWeight from latest weight history entry if it diverged
+          let currentWeight = Number(settings.current_weight);
+          if (weightHistory.length > 0) {
+            const latestWeight = (weightHistory[weightHistory.length - 1] as any)?.weight;
+            if (latestWeight && typeof latestWeight === 'number' && latestWeight !== currentWeight) {
+              currentWeight = latestWeight;
+              supabase.from("user_settings").update({ current_weight: currentWeight }).eq("user_id", userId);
+            }
+          }
+
           if (!active) return;
 
           setState({
-            currentWeight: Number(settings.current_weight),
+            currentWeight,
             targetWeight: Number(settings.target_weight),
             startWeight: Number(settings.start_weight),
             targetCalories: settings.target_calories,
@@ -414,12 +424,25 @@ export function useDietAppState() {
       const nextHistory = [...prev.weightHistory, { date: dateStr, weight: newWeight }].slice(-8);
       let score = prev.totalScore;
       if (newWeight < old) score += 50;
-      return {
+      const newState = {
         ...prev,
         currentWeight: newWeight,
         totalScore: score,
         weightHistory: nextHistory,
       };
+
+      // Immediately persist weight to cloud to prevent loss on reload
+      if (userId) {
+        supabase.from("user_settings").upsert({
+          user_id: userId,
+          current_weight: newWeight,
+          weight_history: nextHistory as any,
+        }, { onConflict: "user_id" }).then(({ error }) => {
+          if (error) console.error("Failed to save weight update", error);
+        });
+      }
+
+      return newState;
     });
   }
 
