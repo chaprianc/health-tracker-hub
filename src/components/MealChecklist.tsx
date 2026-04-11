@@ -77,6 +77,12 @@ export function MealChecklist({ title, time, items, checkedItems, onToggle, onEd
                     <span>ש {item.fat || 0}g</span>
                   </span>
                 ) : null}
+                {warnings.length > 0 && (
+                  <span className="flex items-center gap-1 text-[10px] text-amber-600 dark:text-amber-400 mt-0.5">
+                    <AlertTriangle className="h-3 w-3 shrink-0" />
+                    {warnings[0]}
+                  </span>
+                )}
               </div>
               {item.calories > 0 && (
                 <span className="text-xs text-muted-foreground shrink-0">{item.calories} קל׳</span>
