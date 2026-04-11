@@ -33,6 +33,7 @@ interface AnalyzedItem {
   emoji: string;
   selected: boolean;
   editing: boolean;
+  quantity: number;
 }
 
 const EMOJI_OPTIONS = ["🥚", "🍞", "🥒", "🧀", "🍗", "🍚", "🥗", "🥄", "🐟", "🥦", "🌾", "🍎", "🥛", "🥜", "🥩", "🍕", "🥑", "🍌", "🫘", "🥣"];
