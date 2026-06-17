@@ -179,6 +179,7 @@ export default function History() {
           </>
         )}
       </main>
+      <MobileBottomNav />
     </div>
   );
 }
