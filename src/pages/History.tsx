@@ -2,6 +2,7 @@ import { useDietAppState } from "@/hooks/useDietAppState";
 import type { DailyLog } from "@/hooks/useDietAppState";
 import { Link } from "react-router-dom";
 import { ArrowRight, CalendarDays, Droplets, Flame, Trophy } from "lucide-react";
+import { MobileBottomNav } from "@/components/MobileBottomNav";
 import {
   BarChart,
   Bar,
@@ -44,8 +45,8 @@ export default function History() {
   }));
 
   return (
-    <div dir="rtl" className="min-h-screen bg-background">
-      <header className="border-b border-border bg-card/80 backdrop-blur-sm">
+    <div dir="rtl" className="min-h-screen bg-background pb-20 md:pb-0">
+      <header className="sticky top-0 z-40 border-b border-border bg-card/80 backdrop-blur-sm safe-top">
         <div className="mx-auto flex max-w-4xl items-center gap-3 px-4 py-4">
           <Link
             to="/"
@@ -178,6 +179,7 @@ export default function History() {
           </>
         )}
       </main>
+      <MobileBottomNav />
     </div>
   );
 }
