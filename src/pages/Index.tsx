@@ -14,6 +14,7 @@ import { ProfileEditDialog } from "@/components/ProfileEditDialog";
 import { RecalculateDialog } from "@/components/RecalculateDialog";
 import type { MealGroup } from "@/hooks/useDietAppState";
 import { Apple, Settings2, CalendarDays, LogOut, User, Pencil } from "lucide-react";
+import { MobileBottomNav } from "@/components/MobileBottomNav";
 
 const Index = () => {
   const { state, computed, actions, loaded } = useDietAppState();
@@ -82,25 +83,10 @@ const Index = () => {
         </div>
       </header>
 
-      {/* Mobile bottom navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 z-40 flex md:hidden items-center justify-around border-t border-border bg-card/95 backdrop-blur-sm px-2 py-2 safe-bottom">
-        <Link to="/" className="flex flex-col items-center gap-0.5 rounded-lg px-3 py-1.5 text-primary">
-          <Apple className="h-5 w-5" />
-          <span className="text-[10px] font-medium">ראשי</span>
-        </Link>
-        <Link to="/history" className="flex flex-col items-center gap-0.5 rounded-lg px-3 py-1.5 text-muted-foreground hover:text-primary transition-colors">
-          <CalendarDays className="h-5 w-5" />
-          <span className="text-[10px] font-medium">היסטוריה</span>
-        </Link>
-        <button onClick={() => setShowProfileEdit(true)} className="flex flex-col items-center gap-0.5 rounded-lg px-3 py-1.5 text-muted-foreground hover:text-primary transition-colors">
-          <User className="h-5 w-5" />
-          <span className="text-[10px] font-medium">פרופיל</span>
-        </button>
-        <button onClick={() => setShowRecalculate(true)} className="flex flex-col items-center gap-0.5 rounded-lg px-3 py-1.5 text-muted-foreground hover:text-primary transition-colors">
-          <Settings2 className="h-5 w-5" />
-          <span className="text-[10px] font-medium">הגדרות</span>
-        </button>
-      </nav>
+      <MobileBottomNav
+        onProfileClick={() => setShowProfileEdit(true)}
+        onSettingsClick={() => setShowRecalculate(true)}
+      />
 
       <main className="mx-auto max-w-4xl space-y-4 md:space-y-5 px-3 md:px-4 py-4 md:py-6">
         {!loaded ? (
