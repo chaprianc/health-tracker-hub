@@ -363,7 +363,7 @@ const Onboarding = () => {
 
               {/* Summary */}
               <div className="rounded-xl bg-muted/50 p-4 space-y-3">
-                <h3 className="text-sm font-bold text-foreground">סיכום הפרטים שלך</h3>
+                <h2 className="text-sm font-bold text-foreground">סיכום הפרטים שלך</h2>
                 <div className="grid grid-cols-2 gap-2 text-sm text-muted-foreground">
                   <span>גיל: {data.age}</span>
                   <span>גובה: {data.height} ס״מ</span>
