@@ -11,6 +11,7 @@ import Onboarding from "./pages/Onboarding";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
+import { InstallPrompt } from "@/components/InstallPrompt";
 
 const queryClient = new QueryClient();
 
@@ -71,6 +72,7 @@ const App = () => (
             <Route path="/history" element={<ProtectedRoute><History /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
+          <InstallPrompt />
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
