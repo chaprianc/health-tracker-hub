@@ -50,6 +50,7 @@ export default function History() {
         <div className="mx-auto flex max-w-4xl items-center gap-3 px-4 py-4">
           <Link
             to="/"
+            aria-label="חזרה לדף הבית"
             className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
           >
             <ArrowRight className="h-5 w-5" />

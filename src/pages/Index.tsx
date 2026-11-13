@@ -76,6 +76,7 @@ const Index = () => {
               onClick={signOut}
               className="flex items-center gap-1 rounded-lg bg-secondary px-2 md:px-2.5 py-2 text-xs text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
               title="התנתק"
+              aria-label="התנתק"
             >
               <LogOut className="h-3.5 w-3.5" />
             </button>
@@ -95,6 +96,7 @@ const Index = () => {
           </div>
         ) : (
         <>
+        <h2 className="sr-only">סיכום יומי</h2>
         {/* Stats */}
         <StatsCards
           currentWeight={state.currentWeight}
@@ -129,6 +131,7 @@ const Index = () => {
               setCalorieInput(String(state.targetCalories));
               setShowCalorieEdit(true);
             }}
+            aria-label="עריכת יעד קלוריות יומי"
             className="absolute left-4 top-4 rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
           >
             <Settings2 className="h-4 w-4" />
@@ -179,6 +182,7 @@ const Index = () => {
           />
         </div>
 
+        <h2 className="sr-only">ארוחות היום</h2>
         {/* Meal checklists */}
         <div className="grid gap-4 sm:grid-cols-2">
           {state.meals.map((meal, idx) => (
@@ -219,6 +223,7 @@ const Index = () => {
         )}
 
         {/* Settings */}
+        <h2 className="sr-only">הגדרות</h2>
         <div className="border-t border-border pt-5">
           <SettingsPanel
             onExport={actions.exportJson}
